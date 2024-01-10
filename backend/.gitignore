@@ -12,8 +12,8 @@ __pycache__/
 *.sublime-workspace
 
 # Ignore Django migration files
-*/migrations/*.py
-*/migrations/*.pyc
+*/*/migrations/*.py
+*/*/migrations/*.pyc
 
 # Ignore local settings file
 local_settings.py
