@@ -207,3 +207,23 @@ def leave_family(request):
             return Response('You are not a member of this family.', status=400)
         
     return Response('Invalid request method.', status=405)
+
+
+@api_view(['GET','POST'])
+@authentication_classes([SessionAuthentication, BasicAuthentication])
+@permission_classes([IsAuthenticated])
+def post(request):
+    if request.method == 'GET':
+
+        return Response('Message',status=200)
+    
+    if request.method == 'POST':
+        user = request.user
+        data = json.loads(request.body)
+        family = Family.objects.filter(id=data.get('familyId')).first()
+        serializer = PostSerializer(data=request.data,context={'request':request})
+
+        
+        
+        return Response(serializer.errors,status=400)
+    return Response('Invalid Method Request', status=403)

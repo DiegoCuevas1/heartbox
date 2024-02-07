@@ -10,14 +10,14 @@ class UserProfileSerializer(serializers.ModelSerializer):
 class PostSerializer(serializers.ModelSerializer):
     class Meta:
         model = Post
-        fields = ['id', 'user_id', 'title', 'description', 'datePosted', 'image']
-        # Include other fields related to the Relic model
+        fields = ['id', 'user','family','title', 'message', 'datePosted']
+        # Include other fields related to the Post model
 
 
 class FamilySerializer(serializers.ModelSerializer):
     invite_code = serializers.SerializerMethodField()
     members = serializers.SerializerMethodField()
-
+    posts = serializers.SerializerMethodField()
     class Meta:
         model = Family
         fields = ['id', 'family_name', 'family_description', 'invite_code', 'members']
@@ -41,6 +41,18 @@ class FamilySerializer(serializers.ModelSerializer):
 
         if user and user in obj.members.all():
             return obj.invite_code
+
+        return None
+    
+    def get_posts(self, obj):
+        # Check if the user making the request is a member of the family
+        request = self.context.get('request')
+        user = request.user if request.user.is_authenticated else None
+
+        if user and user in obj.members.all():
+            # Assuming you have a 'Post' model with a 'family' ForeignKey
+            posts = obj.posts.all()
+            return PostSerializer(posts, many=True).data
 
         return None
     

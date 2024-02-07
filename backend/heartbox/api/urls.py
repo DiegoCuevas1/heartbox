@@ -9,5 +9,6 @@ urlpatterns = [
     path("user/families",views.family,name="family"),
     path('user/families/join-family', views.join_family, name='join_family'),
     path('user/families/<int:familyId>/', views.family, name='family_by_id'),
-    path('user/families/leave-family',views.leave_family,name="leave_family")
+    path('user/families/leave-family',views.leave_family,name="leave_family"),
+    path('user/posts',views.post,name="post")
 ]

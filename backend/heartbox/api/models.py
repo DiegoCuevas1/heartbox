@@ -31,10 +31,10 @@ class UserProfile(AbstractBaseUser, PermissionsMixin):
     last_name = models.CharField(_('last name'), max_length=100)
     first_name = models.CharField(_('first name'), max_length=100)
     birthdate = models.DateField(_('birthdate'), blank=True, null=True)
-    
+    posts = models.ManyToManyField('Post', related_name='user_posts', related_query_name='user_post')
     objects = UserProfileManager()
-    families = models.ManyToManyField('Family', related_name='family_members')
-    notifications = models.ManyToManyField('Notification',related_name="notifications")
+    families = models.ManyToManyField('Family', related_name='family_members',related_query_name="family_member")
+    notifications = models.ManyToManyField('Notification',related_name="notifications",related_query_name="notification")
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['last_name', 'first_name']
 
@@ -48,29 +48,14 @@ class UserProfile(AbstractBaseUser, PermissionsMixin):
         self.families.remove(family)
         self.save()
 
-class PostManager(models.Manager):
-    def create_post(self,title,description, **other_fields):
-        if not title:
-            raise ValueError(_('You must provide a title for the post.'))
-        post = self.model(title=title,description=description,**other_fields)
-        post.save()
-        return post
 
-class Post(models.Model):
-    id = models.AutoField(primary_key=True)
-    user = models.ForeignKey(get_user_model(),on_delete=models.CASCADE)
-    title = models.CharField(max_length=250)
-    description = models.CharField(max_length=500)
-    datePosted = models.DateField()
-    # For video hosting implementation:
-    # image = models.CharField(max_length=500)
 
 class FamilyManager(models.Manager):
     def create_family(self, family_name, family_description, creator):
         inviteCode = self.generate_invite_code()
         family = self.create(family_name=family_name, family_description=family_description, invite_code=inviteCode)
         family.members.add(creator)
-        family.creator = creator  # Set the creator
+        family.creator = creator
         family.save()
         return family
 
@@ -93,8 +78,28 @@ class Family(models.Model):
     family_description = models.CharField(max_length=500)
     invite_code = models.CharField(max_length=50, unique=True)
     members = models.ManyToManyField(get_user_model(), related_name='user_families')
+    posts = models.ManyToManyField('Post', related_name='family_posts', related_query_name='family_post')
     objects = FamilyManager()
 
+class PostManager(models.Manager):
+    def create_post(self, title, message, family, **other_fields):
+        if not title:
+            raise ValueError(_('You must provide a title for the post.'))
+
+        post = self.model(title=title, message=message, family=family, **other_fields)
+        post.save()
+        return post
+
+    
+class Post(models.Model):
+    id = models.AutoField(primary_key=True)
+    user = models.ForeignKey(get_user_model(),on_delete=models.CASCADE)
+    family = models.ForeignKey(Family,on_delete=models.CASCADE,null=True)
+    message = models.TextField(default="default")
+    title = models.CharField(max_length=200)
+    datePosted = models.DateField()
+    # For video hosting implementation:
+    # video = models.CharField(max_length=500)
 
 class NotificationManager(models.Manager):
     def create_notif(self, message, notification_type, timestamp=None):
