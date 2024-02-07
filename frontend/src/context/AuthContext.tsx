@@ -37,27 +37,41 @@ export const UserContextProvider = ({
 
   useEffect(() => {
     const checkLogin = async () => {
-      const res = await fetch("http://localhost:8000/api/user/check-login", {
-        credentials: "include",
-        next: { revalidate: 0 },
-      });
+      try {
+        const res = await fetch("http://localhost:8000/api/user/check-login", {
+          credentials: "include",
+          next: { revalidate: 0 },
+        });
+  
+        const data = await res.json();
+        if (res.ok) {
+          // this is because a valid response (200) can also be sent if even the user is not signed in
+          if (res.status === 202) {
+            const user = JSON.parse(data.data);
+            setUserId(user.id);
+            setUserFN(user.f_name);
+            setUserLN(user.l_name);
+            setAuthStatus(true);
 
-      const data = await res.json();
-      if (res.ok) {
-        // this is because a valid response (200) can also be sent if even user is not signed in
-        if (res.status === 202) {
-          const user = JSON.parse(data.data);
-          setUserId(user.id);
-          setUserFN(user.f_name);
-          setUserLN(user.l_name);
-          setAuthStatus(true);
+            localStorage.setItem('userId', user.id);
+            localStorage.setItem('userFN', user.f_name);
+            localStorage.setItem('userLN', user.l_name);
+            localStorage.setItem('authStatus', 'true');
+          }
+        } else {
+          toast.error(data.messages);
         }
-      } else {
-        toast.error(data.messages);
+      } catch (error:any) {
+        console.error('Error:', error.message);
       }
     };
-    checkLogin();
-  },[]);
+  
+    // Immediately invoke the asynchronous function
+    (async () => {
+      await checkLogin();
+    })();
+  }, []);
+  
 
   useEffect(() => {
     setSignIn(() => setAuthStatus(true));

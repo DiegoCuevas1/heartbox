@@ -3,4 +3,11 @@
 @tailwind utilities;
 html {
     scroll-behavior: smooth;
+    overflow-x:hidden;
+  }
+@font-face {
+    font-family: 'LOVES';
+    src: url('/fonts/LOVES.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
   }

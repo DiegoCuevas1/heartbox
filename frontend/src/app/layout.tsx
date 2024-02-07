@@ -3,6 +3,8 @@ import { Inter } from 'next/font/google'
 import './globals.css'
 import { Toaster } from "react-hot-toast";
 import { UserContextProvider } from "@/context/AuthContext";
+import NavBar from '@/components/layout/navbar';
+import Footer from '@/components/layout/footer';
 
 
 const inter = Inter({ subsets: ['latin'] })
@@ -22,9 +24,9 @@ export default function RootLayout({
       <body className={inter.className}>
         <Toaster />
         <UserContextProvider>
-        
-          {children}
-          
+          <NavBar />
+          <div className='pt-24'>{children}</div>
+          <Footer />
         </UserContextProvider>
       </body>
     </html>

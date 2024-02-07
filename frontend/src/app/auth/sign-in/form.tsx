@@ -2,6 +2,7 @@
 import { FormEvent } from "react";
 import { useRouter } from 'next/navigation'
 import toast from "react-hot-toast";
+import { navSignIn } from "@/utils/NavAuthToggle";
 
 function FormComponent() {
     const validate = (email: any) =>
@@ -30,7 +31,8 @@ function FormComponent() {
             const res_msg = await res.text(); 
             if (res.ok) {
                 toast.success(res_msg);
-                router.push("/home");
+                navSignIn();
+                router.push("/families");
               } else toast.error(res_msg);
             } catch (error) {
               toast.error((error as Error).toString());
@@ -68,7 +70,7 @@ function FormComponent() {
                 placeholder="Password"
               />
             </div>
-            <button className="w-48 h-12 rounded-xl text-white drop-shadow-xl bg-default hover:cursor-pointer hover:bg-[#d94e60] active:scale-95 transition-all">
+            <button className="w-48 h-12 rounded-xl text-white drop-shadow-xl bg-[#CA384B] hover:cursor-pointer hover:bg-[#d94e60] active:scale-95 transition-all">
               Submit
             </button>
           </form>

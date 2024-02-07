@@ -1,18 +1,19 @@
 "use client";
 import toast from "react-hot-toast";
 import { navSignOut } from "@/utils/NavAuthToggle";
+import { useUserContext } from "@/context/AuthContext";
+import getCSRF from "@/utils/cookie";
+
 
 
 const Logout = () => {
-  const getCSRF = () => {
-    return document.cookie
-      .split("; ")
-      .find((row) => row.startsWith("csrftoken="))
-      ?.split("=")[1];
-  };
+  
+  const context = useUserContext();
+    if (!context) return <div>Loading ...</div>;
 
+    const { userFN, authStatus } = context;
   const handleLogout = async () => {
-    const csrfValue = getCSRF() ?? "";
+    const csrfValue = getCSRF() ?? ""
     try {
       const res = await fetch("http://localhost:8000/api/user/logout", {
         headers: {
@@ -33,12 +34,15 @@ const Logout = () => {
   };
 
   return (
-    <button
-      onClick={handleLogout}
-      className="w-48 h-12 rounded-xl text-white drop-shadow-xl bg-default hover:cursor-pointer hover:bg-[#d94e60] active:scale-95 transition-all"
-    >
-      Logout
-    </button>
+    <>
+    
+      {authStatus && (  <button
+        onClick={handleLogout}
+        className="w-[170px] h-[40px] border-white border-2 rounded-[25px] text-white drop-shadow-xl bg-[#CA384B] hover:cursor-pointer hover:bg-[#d94e60] active:scale-95 transition-all"
+        >
+        Logout
+        </button>)}
+    </>
   );
 };
 

@@ -125,7 +125,7 @@ function FormComponent() {
            required
           />
         </div>
-        <button className="w-48 h-12 rounded-xl text-white drop-shadow-xl bg-default hover:cursor-pointer hover:bg-[#d94e60] active:scale-95 transition-all">
+        <button className="w-48 h-12 rounded-xl text-white drop-shadow-xl bg-[#CA384B] hover:cursor-pointer hover:bg-[#d94e60] active:scale-95 transition-all">
           Submit
         </button>
       </form>
