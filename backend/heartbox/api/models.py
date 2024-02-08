@@ -42,12 +42,18 @@ class UserProfile(AbstractBaseUser, PermissionsMixin):
         return self.email
     def add_to_family(self, family):
         self.families.add(family)
-        # Optionally save the user
-        self.save()
+        
     def remove_from_family(self,family):
         self.families.remove(family)
-        self.save()
+      
 
+    def add_to_posts(self,post):
+        self.posts.add(post)
+  
+
+    def remove_from_posts(self,post):
+        self.posts.remove(post)
+   
 
 
 class FamilyManager(models.Manager):
@@ -82,14 +88,16 @@ class Family(models.Model):
     objects = FamilyManager()
 
 class PostManager(models.Manager):
-    def create_post(self, title, message, family, **other_fields):
-        if not title:
-            raise ValueError(_('You must provide a title for the post.'))
-
-        post = self.model(title=title, message=message, family=family, **other_fields)
-        post.save()
+    def create_post(self, title, message, user, family=None, date_posted=None):
+        post = self.create(
+            title=title,
+            message=message,
+            user=user,
+            family=family,
+            datePosted=date_posted
+        )
+        
         return post
-
     
 class Post(models.Model):
     id = models.AutoField(primary_key=True)
@@ -98,6 +106,8 @@ class Post(models.Model):
     message = models.TextField(default="default")
     title = models.CharField(max_length=200)
     datePosted = models.DateField()
+
+    objects = PostManager()
     # For video hosting implementation:
     # video = models.CharField(max_length=500)
 
