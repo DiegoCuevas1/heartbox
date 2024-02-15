@@ -10,9 +10,10 @@ const Landing = () => {
   {
     redirect("/home");
   }
-  else
+   
+  if(authStatus)
   {
-    redirect("/discover");
+    redirect("/families")
   }
 
 };

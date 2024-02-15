@@ -20,7 +20,7 @@ class FamilySerializer(serializers.ModelSerializer):
     posts = serializers.SerializerMethodField()
     class Meta:
         model = Family
-        fields = ['id', 'family_name', 'family_description', 'invite_code', 'members']
+        fields = ['id', 'family_name', 'family_description', 'invite_code', 'members','posts']
         # Include other fields related to the Family model
 
     def get_members(self, obj):

@@ -1,91 +1,33 @@
-'use client';
-import Button from "@/components/button";
-import Logout from "@/components/logoutbtn";
 import Link from "next/link";
-import { useEffect, useState } from "react";
-
-type CardProps = {
-  title: string;
-  description: string;
-  image: string;
-};
-
-function Card({ cardProps }: { cardProps: CardProps }) {
-  const { title, description, image } = cardProps;
-
-  return (
-    <div>
-      <h2>{title}</h2>
-      <p>{description}</p>
-      <img src={`images/${image}`} alt={title} style={{ height: '200px', width: '300px' }} />
-      {/* Add other card content based on cardProps */}
-    </div>
-  );
-}
 
 export default function SignInSignUp() {
-  const [activeCardIndex, setActiveCardIndex] = useState(0);
-
-  const nextCard = () => {
-    setActiveCardIndex((prevIndex) => (prevIndex + 1) % cardData.length);
-  };
-
-  const prevCard = () => {
-    setActiveCardIndex((prevIndex) => (prevIndex - 1 + cardData.length) % cardData.length);
-  };
-
-  const cardData = [
-    {
-      title: "Card 1",
-      description: "Description for Card 1",
-      image: "stock_family.jpg",
-    },
-    {
-      title: "Card 2",
-      description: "Description for Card 2",
-      image: "chicken_man.webp",
-    },
-    {
-      title: "Card 3",
-      description: "Description for Card 3",
-      image: "cat_caviar.jpg",
-    },
-  ];
-
-  const activeCard = cardData[activeCardIndex];
-
-  useEffect(() => {
-    // Set up automatic transition every 5 seconds
-    const intervalId = setInterval(() => {
-      nextCard();
-    }, 5000);
-
-    // Clear the interval on component unmount to avoid memory leaks
-    return () => clearInterval(intervalId);
-  }, [activeCardIndex]);
-  
   return (
-    <div className="flex flex-col mb-8 mt-4 ">
-      <div id="more" className="flex flex-col">
-        <h4 className="text-center text-[#CA384B] font-semibold text-3xl">Leave Your Mark Today</h4>
-        <div className="flex w-full max-w-screen-xl items-center mx-auto justify-center">
-          <div className="transition-all opacity-100 duration-500">
-            <Card cardProps={activeCard} />
-          </div>
-        </div>
-        <div className="flex justify-center mt-4 space-x-2">
-          <button className="border-2 border-[#CA384B] rounded-lg p-1 text-[#CA384B] font-bold hover:bg-[#CA384B] hover:text-white transition-all" onClick={prevCard}>&lt; Prev</button>
-          <button className="border-2 border-[#CA384B] rounded-lg p-1 text-[#CA384B] font-bold hover:bg-[#CA384B] hover:text-white transition-all " onClick={nextCard}>Next &gt;</button>
-        </div>
-        <div className="mt-4 mx-auto z-[1] flex-col flex space-y-4">
-          <Link href={"/auth/sign-up"}>
-            <Button text="Sign Up" />
-          </Link>
-          <Link href={"/auth/sign-in"}>
-            <Button text="Login" />
-          </Link>
+    <div id='more' className="flex flex-col pb-4 bg-[#fde9f1]">
+      <div className="flex flex-col justify-center w-screen h-40 ">
+        <img 
+          src="/images/heartbox_logo.png"
+          alt="HeartBox Logo without Text"
+          width={100}
+          className="self-center"
+        />
+        <h2 className="mt-3 text-[#565356] text-3xl font-loves text-center">LEAVE YOUR MARK TODAY</h2>
+      </div>
+      <div className="relative">
+        <img
+          className="w-full h-full object-cover"
+          src="/images/family_photos.png"
+          alt="Background"
+        />
+        
+        {/* Your content (buttons or other elements) */}
+        <div className="absolute flex-col space-y-4 inset-0 flex items-center justify-center">
+          <button className="bg-[#D31C5F] text-3xl text-white px-4 py-2 rounded-lg hover:scale-110 transition-all shadow-[0_20px_10px_-15px_rgba(0,0,0,.8)]"><Link href={'/auth/sign-up'}>SIGN UP</Link></button>
+          <p className="bg-white p-2 rounded-full text-2xl font-bold border-4 border-[#d31c60]">OR</p>
+          <button className="bg-[#D31C5F] text-3xl text-white px-4 py-2 rounded-lg hover:scale-110 transition-all shadow-[0_20px_10px_-15px_rgba(0,0,0,.8)]"><Link href={'/auth/sign-in'}>SIGN IN</Link></button>
         </div>
       </div>
+
+
     </div>
   );
 }

@@ -25,7 +25,7 @@ export default function RootLayout({
         <Toaster />
         <UserContextProvider>
           <NavBar />
-          <div className='pt-24'>{children}</div>
+          <div className='pt-28'>{children}</div>
           <Footer />
         </UserContextProvider>
       </body>
