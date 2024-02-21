@@ -16,7 +16,7 @@ export default function Card({family}:{family:FamilyProps})
             </div> */}
             <div className="flex justify-center items-center flex-col">
                 <img src="/images/family_heartbox.png" width={150} alt={`Family ${family.id}`} />
-                <p className="">{family.family_name}</p>
+                <p className="text-[#0c0c0c]">{family.family_name}</p>
             </div>
         </Link>
     )

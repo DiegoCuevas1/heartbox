@@ -1,11 +1,13 @@
-import Link from "next/link"
-import Logout from "@/components/logoutbtn"
-import Button from "@/components/button"
+'use client';
 import SignInSignUp from "./SignUpSignIn"
 import HomeSignupButton from "@/components/HomeSignupButton"
+import { useUserContext } from "@/context/AuthContext"
+import { useRouter } from "next/navigation"
+import { useEffect } from "react";
 
-function Hero()
-{
+function Hero() {
+  
+
   return(
     <main>
       {/* <div className="flex h-[240px] relative bg-gradient-to-r from-[#fde9f1] via-[#ff2345] to-[#fde9f1]"> */}
@@ -24,6 +26,14 @@ function Hero()
 }
 
 export default function Home() {
+  const { authStatus } = useUserContext();
+  const router = useRouter();
+  if(authStatus)
+  {
+    router.push('/families')
+
+  }
+
     return (
     <div className="">
       <Hero />

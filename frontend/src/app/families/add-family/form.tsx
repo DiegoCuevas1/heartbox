@@ -24,7 +24,7 @@ export default function FormComponent()
                         Create
                     </p>
                     <p
-                        className={classNames('py-2 font-loves font-bold flex px-[51px] text-xl', {
+                        className={classNames('py-2 font-loves font-bold  flex px-[51px] text-xl', {
                         'bg-[#D31c60] text-white': formType === true, // Highlight "Join" when formType is true
                         })}
                         onClick={() => setFormType(true)}

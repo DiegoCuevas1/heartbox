@@ -40,7 +40,7 @@ function FormComponent() {
     }
 
     return (
-        <div className="text-black px-12 py-6">
+        <div className="text-black px-10 py-6">
           <h2 className="pb-6 flex font-loves font-bold text-3xl justify-center items-center text-center">
                 <span className="border-b-2 border-[#D31c60]">Sign In</span>
             </h2>
@@ -72,6 +72,19 @@ function FormComponent() {
                 maxLength={50}
                 placeholder="Password"
               />
+            </div>
+            <div className="flex space-x-8 px-2 pb-7 ">
+            <div className="space-x-1">
+              <input
+              type="checkbox"
+              id="remember"
+              className="accent-[#d31c60] bg-white border-2 border-[#d31c60] border-gray-300"
+              />
+            <label htmlFor="remember" className="font-loves font-bold">Remember Me</label>
+            </div>
+            <button className="py-1 px-2 italic font-loves font-bold rounded-xl text-sm bg-[#d31c60] text-white ">
+              Forgot Password?
+            </button>
             </div>
             <button className="w-36 h-12 rounded-xl text-white drop-shadow-xl bg-[#d31c60] font-loves font-bold text-3xl hover:cursor-pointer hover:scale-125 active:scale-95 transition-all">
               Enter

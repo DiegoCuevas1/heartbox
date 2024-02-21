@@ -135,7 +135,7 @@ export default function Page() {
             </div> */}
 
             
-            <h2 className="pt-12 flex font-loves font-bold text-3xl justify-center items-center text-center">
+            <h2 className="pt-12 flex text-[#0c0c0c] font-loves font-bold text-3xl justify-center items-center text-center">
                 <span className="border-b-2 border-[#D31c60]">Create or Join a Family</span>
             </h2>
 
