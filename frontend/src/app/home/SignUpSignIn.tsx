@@ -10,7 +10,7 @@ export default function SignInSignUp() {
           width={100}
           className="self-center"
         />
-        <h2 className="mt-3 text-[#565356] text-3xl font-loves text-center">LEAVE YOUR MARK TODAY</h2>
+        <h2 className="mt-3 text-[#565356] text-3xl font-loves text-center font-bold">LEAVE YOUR MARK TODAY</h2>
       </div>
       <div className="relative">
         <img

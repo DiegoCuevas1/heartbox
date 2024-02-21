@@ -139,7 +139,7 @@ def family(request):
             # Use the custom manager to create the family
             family = Family.objects.create_family(
                 family_name=serializer.validated_data['family_name'],
-                family_description=serializer.validated_data['family_description'],
+                family_description=serializer.validated_data.get('family_description',None),
                 creator=request.user
             )
 

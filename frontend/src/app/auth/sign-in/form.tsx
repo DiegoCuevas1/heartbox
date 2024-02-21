@@ -40,10 +40,13 @@ function FormComponent() {
     }
 
     return (
-        <div className="text-black">
+        <div className="text-black px-12 py-6">
+          <h2 className="pb-6 flex font-loves font-bold text-3xl justify-center items-center text-center">
+                <span className="border-b-2 border-[#D31c60]">Sign In</span>
+            </h2>
           <form className="flex flex-col items-center justify-center mx-auto max-w-md" onSubmit={handleSubmit}>
             <div className="flex flex-col mb-4">
-              <label htmlFor="email" className="mb-1">
+              <label htmlFor="email" className="font-loves font-bold mb-1">
                 Email<span className="text-red-500">*</span>:
               </label>
               <input
@@ -57,7 +60,7 @@ function FormComponent() {
               />
             </div>
             <div className="flex flex-col mb-4">
-              <label htmlFor="password" className="mb-1">
+              <label htmlFor="password" className=" font-loves font-bold mb-1">
                 Password<span className="text-red-500">*</span>:
               </label>
               <input
@@ -70,8 +73,8 @@ function FormComponent() {
                 placeholder="Password"
               />
             </div>
-            <button className="w-48 h-12 rounded-xl text-white drop-shadow-xl bg-[#CA384B] hover:cursor-pointer hover:bg-[#d94e60] active:scale-95 transition-all">
-              Submit
+            <button className="w-36 h-12 rounded-xl text-white drop-shadow-xl bg-[#d31c60] font-loves font-bold text-3xl hover:cursor-pointer hover:scale-125 active:scale-95 transition-all">
+              Enter
             </button>
           </form>
         </div>

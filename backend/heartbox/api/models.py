@@ -81,7 +81,7 @@ class FamilyManager(models.Manager):
 class Family(models.Model):
     id = models.AutoField(primary_key=True)
     family_name = models.CharField(max_length=250)
-    family_description = models.CharField(max_length=500)
+    family_description = models.CharField(max_length=500,blank=True)
     invite_code = models.CharField(max_length=50, unique=True)
     members = models.ManyToManyField(get_user_model(), related_name='user_families')
     posts = models.ManyToManyField('Post', related_name='family_posts', related_query_name='family_post')
