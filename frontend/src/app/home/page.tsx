@@ -28,11 +28,11 @@ function Hero() {
 export default function Home() {
   const { authStatus } = useUserContext();
   const router = useRouter();
-  if(authStatus)
-  {
-    router.push('/families')
-
-  }
+  useEffect(() => {
+    if (authStatus) {
+      router.push('/families');
+    }
+  }, [authStatus, router]);
 
     return (
     <div className="">

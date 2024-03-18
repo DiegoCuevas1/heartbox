@@ -7,11 +7,6 @@ const Landing = () => {
   const router = useRouter();
   if (authStatus) {
     router.push('/families');
-    return (
-      <div>
-        <p>You are already logged in. Redirecting...</p>
-      </div>
-    );
   }
   else
   {

@@ -1,78 +1,88 @@
-'use client';
+'use client'
 import Link from "next/link";
 import { useState,useEffect } from "react";
-import { useRouter } from "next/navigation";
 import MemberList from "./MemberView";
 import toast from "react-hot-toast";
+import { useUserContext } from "@/context/AuthContext";
 
 
-async function getData(id:string) {
-    try {
-      const res = await fetch(`http://localhost:8000/api/user/families?familyId=${id}`, {
-        method: "GET",
-        credentials: "include",
-      });
-  
-      if (!res.ok) {
-        // Handle error cases
-        console.log('Failed Fetch');
-        return Error('Failed To Fetch')
-      }
-  
-      const data = await res.json();
-      // Process the data as needed
-      
-      return data; // Add this line to return the data from the function
-    } catch (error:any) {
-      console.error('Error:', error.message);
-      throw error; // Rethrow the error to be caught by the calling code
+type FamilyProps = {
+  id:string,
+  family_name:string,
+  family_description:string,
+  members:Member[]
+}
+
+type Member = {
+  id: string;
+  first_name: string;
+  last_name: string;
+}
+
+async function getData(familyId:string) {
+  try {
+    const res = await fetch(`http://localhost:8000/api/user/families?familyId=${familyId}`, {
+      method: "GET",
+      credentials: "include",
+    });
+
+    if (!res.ok) {
+      // Handle error cases
+      console.log('Failed Fetch');
+      return Error()
     }
-  }
 
-export default function Page({ params }: { params: { id: string } }) {
-    const router = useRouter();
-    const [data, setData] = useState([]);
-    const [leaveFamilyData,setLeaveFamilyData] = useState({familyId:`${params.id}`})
-    const fetchData = async () => {
-        try {
-          const data = await getData(params.id);
-          // Process data or set it to state as needed
-          setData(data)
-        } catch (error:any) {
-          console.error('Error in fetchData:', error.message);
-        }
-      };
+    const data = await res.json();
+    // Process the data as needed
     
-      // Call fetchData when the component mounts
-      useEffect(() => {
-        fetchData();
-      }, []);
+    return data; // Add this line to return the data from the function
+  } catch (error:any) {
+    console.error('Error:', error.message);
+    throw error; // Rethrow the error to be caught by the calling code
+  }
+}
+export default  function Page({ params }: { params: { id: string } }) {
+  const [data, setData] = useState<FamilyProps>();
+  const { userId } = useUserContext();
+  const fetchData = async () => {
+    try {
+      const fetchedData = await getData(params.id);
+      // Process data or set it to state as needed
+      setData(fetchedData[0]);
+    } catch (error: any) {
+      console.error('Error in fetchData:', error.message);
+    }
+  };
 
-      const leaveFamily = async () =>
-      {
-        try{
-          const res = await fetch("http://localhost:8000/api/user/families/leave-family", {
-                headers: {
-                  "Content-Type": "application/json",
-                },
-                method: "PATCH",
-                body: JSON.stringify(leaveFamilyData),
-                credentials: "include",
-              });
-          const res_msg = await res.json()
-          if (res.ok) {
-            toast.success(res_msg);
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+      // const leaveFamily = async () =>
+      // {
+      //   try{
+      //     const res = await fetch("http://localhost:8000/api/user/families/leave-family", {
+      //           headers: {
+      //             "Content-Type": "application/json",
+      //           },
+      //           method: "PATCH",
+      //           body: JSON.stringify(leaveFamilyData),
+      //           credentials: "include",
+      //         });
+      //     const res_msg = await res.json()
+      //     if (res.ok) {
+      //       toast.success(res_msg);
             
-            router.push("/families");
-          } else toast.error(res_msg);
+      //       router.push("/families");
+      //     } else toast.error(res_msg);
           
-        }catch(error:any){
-          console.log(error)
-        }
-      }
+      //   }catch(error:any){
+      //     console.log(error)
+      //   }
+      // }
     return (
-        <div className="mt-8 flex flex-col h-screen">
-            <Link href={'/families'}className="p-4">{'< Back to My Families'}</Link>
+        <div className="h-screen flex flex-col bg-[#fde9f1]">
+            {/* <Link href={'/families'}className="p-4">{'< Back to My Families'}</Link>
             <div className="flex space-x-4">
                 <div className="flex w-96 h-10 ml-4 bg-[#333333]">
                     
@@ -85,7 +95,28 @@ export default function Page({ params }: { params: { id: string } }) {
                     </button>
                 </div>
                 
+            </div> */}
+          <div className="flex my-8 mx-4">
+            <div className="flex space-x-2">
+              <div className="flex-col" >
+                <img 
+                  src="/images/family_heartbox.png"
+                  width={200}
+                  alt={``}
+                />
+                <h2 className="flex w-3/5 shadow-xl text-center justify-center font-loves text-lg font-bold mx-auto bg-[#fdeff1] py-1 border-2 border-[#bb474d] rounded-xl">
+                  {data?.family_name}  
+                </h2>
+              </div>
+              <MemberList members={data?.members} signedInUserId={userId}/>
             </div>
+            
+          </div>
+          
         </div>
     )
+  
   }
+
+
+  

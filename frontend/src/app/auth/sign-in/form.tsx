@@ -3,6 +3,7 @@ import { FormEvent } from "react";
 import { useRouter } from 'next/navigation'
 import toast from "react-hot-toast";
 import { navSignIn } from "@/utils/NavAuthToggle";
+import sanitize_res_msg from "@/utils/utilFunctions";
 
 function FormComponent() {
     const validate = (email: any) =>
@@ -30,7 +31,7 @@ function FormComponent() {
               });
             const res_msg = await res.text(); 
             if (res.ok) {
-                toast.success(res_msg);
+                toast.success(sanitize_res_msg(res_msg));
                 navSignIn();
                 router.push("/families");
               } else toast.error(res_msg);

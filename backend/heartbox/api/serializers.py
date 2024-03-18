@@ -4,7 +4,7 @@ from .models import Family, Notification, UserProfile, Post
 class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserProfile
-        fields = ['id', 'email', 'first_name', 'last_name', 'birthdate']
+        fields = ['id', 'first_name', 'last_name']
         # You can include other fields as needed
 
 class PostSerializer(serializers.ModelSerializer):

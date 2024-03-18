@@ -4,7 +4,7 @@ import './globals.css'
 import { Toaster } from "react-hot-toast";
 import { UserContextProvider } from "@/context/AuthContext";
 import NavBar from '@/components/layout/navbar';
-import Footer from '@/components/layout/footer';
+import BottomNavBar from '@/components/layout/bottom-nav';
 
 
 const inter = Inter({ subsets: ['latin'] })
@@ -26,7 +26,7 @@ export default function RootLayout({
         <UserContextProvider>
           <NavBar />
           <div className='pt-28'>{children}</div>
-          <Footer />
+          <BottomNavBar />
         </UserContextProvider>
       </body>
     </html>

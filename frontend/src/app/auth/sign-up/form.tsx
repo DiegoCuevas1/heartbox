@@ -2,8 +2,34 @@
 import { FormEvent, useState } from "react";
 import { useRouter } from 'next/navigation';
 import toast from "react-hot-toast";
-import Link from "next/link";
+import Link from "next/link"; 
+import sanitize_res_msg from "@/utils/utilFunctions";
 function FormComponent() {
+    const [formData, setFormData] = useState({
+      email:"",
+      firstName: "",
+      lastName:"",
+      password:"",
+      confirmPassword:"",
+      pin:"",
+      birthDate:new Date(),
+    });
+
+    const handleInputChange = (e: any) => {
+      const { name, value, type } = e.target;
+  
+      let newValue;
+  
+      if (type === "date" || type === "datetime-local") {
+        newValue = new Date(value);
+      } else {
+        newValue = value;
+      }
+  
+      setFormData({ ...formData, [name]: newValue });
+    };
+
+
     const validate = (email: any) =>
         /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,4}$/i.test(email);
     
@@ -19,33 +45,45 @@ function FormComponent() {
     const handleSubmit = async (e: FormEvent<HTMLFormElement>) =>
     {
         e.preventDefault();
-        const formData = new FormData(e.currentTarget);
+        const data = new FormData();
+        data.append("email", formData.email);
+        data.append("password", formData.password);
+        data.append("confirm_password",formData.confirmPassword)
+        data.append("firstName", formData.firstName);
+        data.append("lastName", formData.lastName);
+        data.append("birthDate",formData.birthDate.toISOString().slice(0, -14))
+        data.append("pin",formData.pin)
 
-        if (!validate(formData.get("email"))) {
+        if (!validate(data.get("email"))) {
             toast.error("Not an Email! Try Again.");
             return;
           }
-        if (!(formData.get("password") === formData.get("confirm_password"))) {
+        if (!(data.get("password") === data.get("confirm_password"))) {
             toast.error("Passwords are not the same. Try Again.");
             return;
           }
-
-        formData.delete("confirm_password");
-        try {
-            const res = await fetch("http://localhost:8000/api/user/sign-up", {
-              method: "POST",
-              body: formData,
-            });
-      
-            const res_msg = await res.text();
-      
-            if (res.ok) {
-              toast.success(res_msg);
-              router.push("/auth/sign-in");
-            } else toast.error(res_msg);
-          } catch (error) {
-            toast.error((error as Error).toString());
+          data.delete("confirm_password");
+          
+          const entriesIterator: IterableIterator<[string, FormDataEntryValue]> = data.entries();
+          for (const [key, value] of entriesIterator) {
+            console.log(`${key}: ${value}`);
           }
+
+          try {
+              const res = await fetch("http://localhost:8000/api/user/sign-up", {
+                method: "POST",
+                body: data,
+              });
+        
+              const res_msg = await res.text();
+        
+              if (res.ok) {
+                toast.success(sanitize_res_msg(res_msg));
+                router.push("/auth/sign-in");
+              } else toast.error(res_msg);
+            } catch (error) {
+              toast.error((error as Error).toString());
+            }
     }
   return (
     <div className="text-black px-12 py-6">
@@ -65,8 +103,10 @@ function FormComponent() {
                 name="email"
                 className="border-2 p-1 border-gray-400 rounded-md"
                 required
+                value={formData.email}
                 maxLength={50}
                 placeholder="Email"
+                onChange={handleInputChange}
               />
             </div>
             <div className="flex flex-col mb-4">
@@ -81,6 +121,8 @@ function FormComponent() {
                 required
                 maxLength={50}
                 placeholder="Password"
+                onChange={handleInputChange}
+                value={formData.password}
               />
             </div>
             <div className="flex flex-col mb-4">
@@ -95,6 +137,8 @@ function FormComponent() {
                 required
                 maxLength={50}
                 placeholder="Password"
+                onChange={handleInputChange}
+                value={formData.confirmPassword}
               />
             </div>
             <button onClick={handleNextStep} className="w-36 h-12 rounded-xl text-white drop-shadow-xl bg-[#d31c60] font-loves font-bold text-3xl hover:cursor-pointer hover:scale-125 active:scale-95 transition-all">
@@ -117,6 +161,8 @@ function FormComponent() {
                 required
                 maxLength={50}
                 placeholder="First Name"
+                onChange={handleInputChange}
+                value={formData.firstName}
               />
             </div>
             <div className="flex flex-col mb-4">
@@ -131,6 +177,8 @@ function FormComponent() {
                 required
                 maxLength={50}
                 placeholder="Last Name"
+                onChange={handleInputChange}
+                value={formData.lastName}
               />
             </div>
             <div className="flex flex-col mb-4">
@@ -145,6 +193,8 @@ function FormComponent() {
                 required
                 maxLength={50}
                 placeholder="mm/dd/yyyy"
+                onChange={handleInputChange}
+                value={formData.birthDate.toISOString().slice(0, -14)}
               />
             </div>
             <div className="flex flex-col mb-4">
@@ -159,6 +209,8 @@ function FormComponent() {
                 required
                 maxLength={50}
                 placeholder="PIN"
+                onChange={handleInputChange}
+                value={formData.pin}
               />
             </div>
             <div className="flex space-x-2">

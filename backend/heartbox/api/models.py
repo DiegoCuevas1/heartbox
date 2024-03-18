@@ -27,16 +27,18 @@ class UserProfileManager(BaseUserManager):
         return user
 
 class UserProfile(AbstractBaseUser, PermissionsMixin):
-    email = models.EmailField(_('email address'), unique=True)
-    last_name = models.CharField(_('last name'), max_length=100)
-    first_name = models.CharField(_('first name'), max_length=100)
+    email = models.EmailField(_('email'), unique=True)
+    last_name = models.CharField(_('lastName'), max_length=100)
+    first_name = models.CharField(_('firstName'), max_length=100)
     birthdate = models.DateField(_('birthdate'), blank=True, null=True)
     posts = models.ManyToManyField('Post', related_name='user_posts', related_query_name='user_post')
+    pin = models.CharField(_('PIN'), max_length=6)
     objects = UserProfileManager()
     families = models.ManyToManyField('Family', related_name='family_members',related_query_name="family_member")
     notifications = models.ManyToManyField('Notification',related_name="notifications",related_query_name="notification")
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['last_name', 'first_name']
+
 
     def __str__(self):
         return self.email

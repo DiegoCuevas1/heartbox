@@ -16,7 +16,7 @@ export default function FormComponent()
         <div className="mt-4 mx-auto flex w-80 shadow-xl block border-2 border-[#d31c60] flex-col rounded-lg">
                 <div className="flex border-b-2 border-[#d31c60]">
                     <p
-                        className={classNames('py-2 px-[51px] font-loves font-bold flex  text-xl', {
+                        className={classNames('py-2 px-[51px] font-loves font-bold flex  text-xl hover:bg-[#D31c60] hover:text-white transition-all', {
                         'bg-[#D31c60] text-white': formType === false, // Highlight "Create" when formType is false
                         })}
                         onClick={() => setFormType(false)}
@@ -24,7 +24,7 @@ export default function FormComponent()
                         Create
                     </p>
                     <p
-                        className={classNames('py-2 font-loves font-bold  flex px-[51px] text-xl', {
+                        className={classNames('py-2 font-loves font-bold  flex px-[51px] text-xl hover:bg-[#D31c60] hover:text-white transition-all ', {
                         'bg-[#D31c60] text-white': formType === true, // Highlight "Join" when formType is true
                         })}
                         onClick={() => setFormType(true)}
@@ -104,11 +104,10 @@ function JoinForm()
         const formData = new FormData(e.currentTarget);
 
         const data = {
-            family_name: formData.get('family_name'),
-            family_description:formData.get('family_description')
+            inviteCode: formData.get('inviteCode'),
         };
         try {
-            const res = await fetch("http://localhost:8000/api/user/families", {
+            const res = await fetch("http://localhost:8000/api/user/families/join-family", {
                 headers: {
                   "Content-Type": "application/json",
                 },
@@ -133,12 +132,13 @@ function JoinForm()
                 <label className="font-loves font-bold">Family Invite Code<span className="text-[#ff0000]">*</span>:</label>
                 <input 
                     type="text"
-                    placeholder="Family Name"
+                    placeholder="Invite Code"
                     className="border-2 border-[#c3366c] py-2 px-2 w-60 rounded-xl italic font-loves font-bold shadow-xl"
                     required
+                    name="inviteCode"
                 />
                 <div className="h-2"></div>
-                <button className="drop-shadow-lg bg-[#D31c60] rounded w-36 p-2 mx-auto font-loves font-bold text-white hover:scale-125 transition-all active:scale-95">Add Family</button>
+                <button className="drop-shadow-lg bg-[#D31c60] rounded w-36 p-2 mx-auto font-loves font-bold text-white hover:scale-125 transition-all active:scale-95">Join Family</button>
             </form>
         </div>
     )
