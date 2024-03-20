@@ -1,5 +1,5 @@
 import json
-from django.shortcuts import render
+from django.shortcuts import get_object_or_404, render
 from django.utils import timezone
 from django.contrib.auth import authenticate, get_user_model, login, logout
 from django.http.response import JsonResponse
@@ -32,18 +32,20 @@ def user_login(request):
         else:
             return Response("Failed LOGIN! Check email or password for error.", status=status.HTTP_401_UNAUTHORIZED)
         
+
+        
 @api_view(['POST'])
 def user_signup(request):
     if request.method == 'POST':
         
         data = request.data
     
-        first_name = data.get('f_name')
-        last_name = data.get('l_name')
+        first_name = data.get('firstName')
+        last_name = data.get('lastName')
         email = data.get('email')
         password = data.get('password')
-        birthdate = data.get('birthdate')
-
+        birthdate = data.get('birthDate')
+        pin = data.get('pin')
         if not is_name_valid(first_name):
             return Response("First name was invalid", status=status.HTTP_400_BAD_REQUEST)
         if not is_name_valid(last_name):
@@ -63,8 +65,8 @@ def user_signup(request):
         except ValidationError as e:
             return Response("Password did not pass password validation", status=status.HTTP_400_BAD_REQUEST)
 
-        db.objects.create_user(email=email, password=password, first_name=first_name, last_name=last_name, birthdate=birthdate)
-
+        user = db.objects.create_user(email=email, password=password, first_name=first_name, last_name=last_name, birthdate=birthdate)
+        user.pin = pin
         return Response("User signup was successful", status=status.HTTP_200_OK)
 
 @api_view(['DELETE'])
@@ -103,6 +105,31 @@ def post(request):
         if not db.objects.filter(email=email).exists():
             return Response('User with email {0} does not exist')
         
+@api_view(['GET'])
+@authentication_classes([SessionAuthentication, BasicAuthentication])
+@permission_classes([IsAuthenticated])
+def family_posts(request):
+    if request.method == 'GET':
+        # Ensure the user is authenticated
+        if not request.user.is_authenticated:
+            return Response({"detail": "Authentication credentials were not provided."},
+                            status=status.HTTP_401_UNAUTHORIZED)
+
+        # Get the user profile using the authenticated user
+        user_families = request.user.families.all()
+        print(user_families)
+
+        # # Get the families that the user is in
+        # user_families = user_profile.families.all()
+
+        # Get the posts in the user's families
+        family_posts = Post.objects.filter(family__in=user_families)
+
+        # Serialize the posts or process them as needed
+        serializer = PostSerializer(family_posts, many=True)
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
+        
 @api_view(['GET','POST'])
 @authentication_classes([SessionAuthentication, BasicAuthentication])
 @permission_classes([IsAuthenticated])
@@ -139,7 +166,7 @@ def family(request):
             # Use the custom manager to create the family
             family = Family.objects.create_family(
                 family_name=serializer.validated_data['family_name'],
-                family_description=serializer.validated_data['family_description'],
+                family_description=serializer.validated_data.get('family_description',None),
                 creator=request.user
             )
 
@@ -217,10 +244,10 @@ def post(request):
         # Handle GET request
         post_id = request.GET.get('postId')
         if post_id:
-            # If familyId is provided, filter the posts based on the ID
+            # If postId is provided, filter the posts based on the ID
             try:
-                user_posts = Post.objects.filter(id=post_id, members=request.user)
-                serializer = PostSerializer(user_posts, many=True, context={'request': request})
+                user_post = Post.objects.filter(id=post_id, members=request.user)
+                serializer = PostSerializer(user_post, many=True, context={'request': request})
                 if serializer.data == []:
                     return Response('Post Does Not Exist', status=400)
                 return Response(serializer.data, status=200)
@@ -228,12 +255,21 @@ def post(request):
             except ValueError:
                 return Response("Invalid postId format", status=400)
         else:
-            # If familyId is not provided, get all posts for the user
+            # If postId is not provided, get all posts for the user
             user_posts= request.user.posts.all()
 
+        family_id = request.GET.get('familyId')
+        if family_id:
+            try:
+                user_posts = Post.objects.get_posts_in_family(family_id)
+                serializer = PostSerializer(user_posts,many=True)
+                return Response(serializer.data,status=200)
+            except ValueError:
+                return Response("Invalid familyId format", status=400)
         serializer = PostSerializer(user_posts, many=True, context={'request': request})
         return Response(serializer.data, status=200)
 
+        
 
     if request.method == 'POST':
         # Handle POST request

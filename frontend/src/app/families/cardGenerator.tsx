@@ -51,7 +51,7 @@ export default function CardGenerator() {
       
       
     return(
-        <div className="flex flex-col space-y-1">
+        <div className="grid grid-cols-3">
           {Array.isArray(data) && data.map((family,index)=> {return <Card key={index} family={family} />})}
         </div>
     )

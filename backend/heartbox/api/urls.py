@@ -10,5 +10,7 @@ urlpatterns = [
     path('user/families/join-family', views.join_family, name='join_family'),
     path('user/families/<int:familyId>/', views.family, name='family_by_id'),
     path('user/families/leave-family',views.leave_family,name="leave_family"),
-    path('user/posts',views.post,name="post")
+    path('user/posts',views.post,name="post"),
+    path('user/posts/<int:familyId>/',views.post,name="posts_by_family_id"),
+    path('user/timeline',views.family_posts,name="timeline")
 ]

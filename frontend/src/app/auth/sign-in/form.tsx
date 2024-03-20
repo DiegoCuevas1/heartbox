@@ -3,6 +3,7 @@ import { FormEvent } from "react";
 import { useRouter } from 'next/navigation'
 import toast from "react-hot-toast";
 import { navSignIn } from "@/utils/NavAuthToggle";
+import sanitize_res_msg from "@/utils/utilFunctions";
 
 function FormComponent() {
     const validate = (email: any) =>
@@ -30,7 +31,7 @@ function FormComponent() {
               });
             const res_msg = await res.text(); 
             if (res.ok) {
-                toast.success(res_msg);
+                toast.success(sanitize_res_msg(res_msg));
                 navSignIn();
                 router.push("/families");
               } else toast.error(res_msg);
@@ -40,10 +41,13 @@ function FormComponent() {
     }
 
     return (
-        <div className="text-black">
+        <div className="text-black px-10 py-6">
+          <h2 className="pb-6 flex font-loves font-bold text-3xl justify-center items-center text-center">
+                <span className="border-b-2 border-[#D31c60]">Sign In</span>
+            </h2>
           <form className="flex flex-col items-center justify-center mx-auto max-w-md" onSubmit={handleSubmit}>
             <div className="flex flex-col mb-4">
-              <label htmlFor="email" className="mb-1">
+              <label htmlFor="email" className="font-loves font-bold mb-1">
                 Email<span className="text-red-500">*</span>:
               </label>
               <input
@@ -57,7 +61,7 @@ function FormComponent() {
               />
             </div>
             <div className="flex flex-col mb-4">
-              <label htmlFor="password" className="mb-1">
+              <label htmlFor="password" className=" font-loves font-bold mb-1">
                 Password<span className="text-red-500">*</span>:
               </label>
               <input
@@ -70,8 +74,21 @@ function FormComponent() {
                 placeholder="Password"
               />
             </div>
-            <button className="w-48 h-12 rounded-xl text-white drop-shadow-xl bg-[#CA384B] hover:cursor-pointer hover:bg-[#d94e60] active:scale-95 transition-all">
-              Submit
+            <div className="flex space-x-8 px-2 pb-7 ">
+            <div className="space-x-1">
+              <input
+              type="checkbox"
+              id="remember"
+              className="accent-[#d31c60] bg-white border-2 border-[#d31c60] border-gray-300"
+              />
+            <label htmlFor="remember" className="font-loves font-bold">Remember Me</label>
+            </div>
+            <button className="py-1 px-2 italic font-loves font-bold rounded-xl text-sm bg-[#d31c60] text-white ">
+              Forgot Password?
+            </button>
+            </div>
+            <button className="w-36 h-12 rounded-xl text-white drop-shadow-xl bg-[#d31c60] font-loves font-bold text-3xl hover:cursor-pointer hover:scale-125 active:scale-95 transition-all">
+              Enter
             </button>
           </form>
         </div>

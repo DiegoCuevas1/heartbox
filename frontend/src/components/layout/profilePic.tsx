@@ -18,7 +18,10 @@ const ProfilePic = () =>
 
     return(
         <>
-            <img className="h-14" src="/images/default_profpic.png" alt="" />
+            <div className="flex flex-col items-center justify-center">
+                <img className="h-14 w-14 justify-center" src="/images/default_profpic.png" alt="profile picture dropdown icon" />
+                <p className="text-sm">My Profile</p>
+            </div>
         </>
     )
 }

@@ -15,6 +15,7 @@ const config: Config = {
       },
       fontFamily: {
         'loves': ['LOVES', 'sans-serif'],
+        'default': ['Wendelin-Krftig', 'sans-serif'],
       },
       
         

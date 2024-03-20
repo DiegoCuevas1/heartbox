@@ -1,43 +1,40 @@
-import Link from "next/link"
-import Logout from "@/components/logoutbtn"
-import Button from "@/components/button"
+'use client';
 import SignInSignUp from "./SignUpSignIn"
+import HomeSignupButton from "@/components/HomeSignupButton"
+import { useUserContext } from "@/context/AuthContext"
+import Image from "next/image";
+import { useRouter } from "next/navigation"
+import { useEffect } from "react";
 
-function Hero()
-{
+function Hero() {
+  
+
   return(
     <main>
-      <div className="h-[40rem] items-center justify-center flex flex-col">
-          {/* Content of your home page */}
-          
-          <div className="mb-8 mx-4">
-            <h2 className=" font-loves text-white text-5xl text-center ">Welcome to HeartBox</h2>       
-            <p className=" text-white text-2xl text-center ">an app to pass on your legacy</p>
+      {/* <div className="flex h-[240px] relative bg-gradient-to-r from-[#fde9f1] via-[#ff2345] to-[#fde9f1]"> */}
+      <div style={{ background: 'radial-gradient(142% 50.55% at 0% 34.29%, rgba(255, 0, 40, 0.40) 0%, rgba(253, 233, 241, 1) 100%)'}} className="flex h-[240px] relative">
+        <div className="flex mx-auto">
+          <div className="flex flex-col p-6">
+            <h1 className="w-44 text-white text-3xl font-bold drop-shadow-2xl text-shadow font-['Seguoe UI']">Welcome to Heartbox</h1>
+            <HomeSignupButton />
+            <p className="w-[177px] h-9 text-white text-shadow text-sm font-normal font-['Seguoe UI']">Start adding to your own Heartboxes by signing up.</p>
           </div>
-          <div className="my-2">
-           
-            <p className="text-white text-5xl text-center font-bold">MANY LAST WORDS</p>
-          </div>
-          <div className="my-2">
-           <p className=" text-white text-xl text-center font-bold">Save Your Memories</p>
-          </div>
-          
-          <div className="mt-12">
-            <p className=" text-white text-xl text-center font-bold"><Link href={'/home/#more'}>Learn More</Link></p>
-            <p className=" text-white text-lg text-center font-bold"><Link href={'/home/#more'}>↓</Link></p>
-          </div>
+          <Image alt="" height={100} width={100} src="/images/home_family.jpg" className="w-36"/>
         </div>
-        {/* Image overlay */}
-        <div className="absolute inset-0 h-[45rem] bg-cover bg-center z-[-1]"
-             style={{ backgroundImage: 'url("/images/home_family.jpg")' }}>
-          {/* Optional: You can adjust the opacity of the overlay if needed */}
-          <div className="absolute inset-0 bg-[rgba(255,45,70,.35)]"></div>
-        </div>
-      </main>
+      </div>
+    </main>
   )
 }
 
 export default function Home() {
+  const { authStatus } = useUserContext();
+  const router = useRouter();
+  useEffect(() => {
+    if (authStatus) {
+      router.push('/families');
+    }
+  }, [authStatus, router]);
+
     return (
     <div className="">
       <Hero />

@@ -1,20 +1,17 @@
 'use client'
 import { useUserContext } from "@/context/AuthContext";
-import { redirect } from "next/navigation";
+import { useRouter } from "next/navigation";
 
 const Landing = () => {
-  const context = useUserContext();
-  if (!context) return <div>Loading ...</div>;
-  const {authStatus} = context;
-  if(!authStatus)
-  {
-    redirect("/home");
+  const { authStatus } = useUserContext();
+  const router = useRouter();
+  if (authStatus) {
+    router.push('/families');
   }
   else
   {
-    redirect("/discover");
+    router.push('/home');
   }
-
 };
 
 export default Landing;
