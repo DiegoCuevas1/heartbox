@@ -2,6 +2,7 @@
 import SignInSignUp from "./SignUpSignIn"
 import HomeSignupButton from "@/components/HomeSignupButton"
 import { useUserContext } from "@/context/AuthContext"
+import Image from "next/image";
 import { useRouter } from "next/navigation"
 import { useEffect } from "react";
 
@@ -18,7 +19,7 @@ function Hero() {
             <HomeSignupButton />
             <p className="w-[177px] h-9 text-white text-shadow text-sm font-normal font-['Seguoe UI']">Start adding to your own Heartboxes by signing up.</p>
           </div>
-          <img src="https://placehold.co/137x122" className="w-36"/>
+          <Image alt="" height={100} width={100} src="/images/home_family.jpg" className="w-36"/>
         </div>
       </div>
     </main>

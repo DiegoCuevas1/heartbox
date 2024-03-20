@@ -4,13 +4,16 @@ import { useState,useEffect } from "react";
 import MemberList from "./MemberView";
 import toast from "react-hot-toast";
 import { useUserContext } from "@/context/AuthContext";
+import Image from "next/image";
+import FamilyTimeline from "./FamilyTimeline";
 
 
 type FamilyProps = {
   id:string,
   family_name:string,
   family_description:string,
-  members:Member[]
+  members:Member[],
+
 }
 
 type Member = {
@@ -18,6 +21,8 @@ type Member = {
   first_name: string;
   last_name: string;
 }
+
+
 
 async function getData(familyId:string) {
   try {
@@ -44,19 +49,20 @@ async function getData(familyId:string) {
 export default  function Page({ params }: { params: { id: string } }) {
   const [data, setData] = useState<FamilyProps>();
   const { userId } = useUserContext();
-  const fetchData = async () => {
-    try {
-      const fetchedData = await getData(params.id);
-      // Process data or set it to state as needed
-      setData(fetchedData[0]);
-    } catch (error: any) {
-      console.error('Error in fetchData:', error.message);
-    }
-  };
+  
 
   useEffect(() => {
+    async function fetchData() {
+      try {
+        const fetchedData = await getData(params.id);
+        // Process data or set it to state as needed
+        setData(fetchedData[0]);
+      } catch (error: any) {
+        console.error('Error in fetchData:', error.message);
+      }
+    };
     fetchData();
-  }, []);
+  }, [params.id]);
 
       // const leaveFamily = async () =>
       // {
@@ -96,20 +102,24 @@ export default  function Page({ params }: { params: { id: string } }) {
                 </div>
                 
             </div> */}
-          <div className="flex my-8 mx-4">
+          <div className="flex-col my-8 mx-4">
             <div className="flex space-x-2">
-              <div className="flex-col" >
-                <img 
+              <div className="flex-col">
+                <Image
                   src="/images/family_heartbox.png"
                   width={200}
-                  alt={``}
+                  height={100}
+                  alt={`Selected Heartbox Picture`}
                 />
                 <h2 className="flex w-3/5 shadow-xl text-center justify-center font-loves text-lg font-bold mx-auto bg-[#fdeff1] py-1 border-2 border-[#bb474d] rounded-xl">
                   {data?.family_name}  
                 </h2>
               </div>
               <MemberList members={data?.members} signedInUserId={userId}/>
+              
+              
             </div>
+            <div className="mt-2"> <FamilyTimeline id={params.id}></FamilyTimeline> </div>
             
           </div>
           

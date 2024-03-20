@@ -101,6 +101,9 @@ class PostManager(models.Manager):
         
         return post
     
+    def get_posts_in_family(self, family):
+        return self.filter(family=family)
+
 class Post(models.Model):
     id = models.AutoField(primary_key=True)
     user = models.ForeignKey(get_user_model(),on_delete=models.CASCADE)

@@ -1,22 +1,26 @@
+import Image from "next/image";
 import Link from "next/link";
 
 export default function SignInSignUp() {
   return (
     <div id='more' className="flex flex-col pb-4 bg-[#fde9f1]">
       <div className="flex flex-col justify-center w-screen h-40 ">
-        <img 
+        <Image 
           src="/images/heartbox_logo.png"
           alt="HeartBox Logo without Text"
           width={100}
+          height={100}
           className="self-center"
         />
         <h2 className="mt-3 text-[#565356] text-3xl font-loves text-center font-bold">LEAVE YOUR MARK TODAY</h2>
       </div>
       <div className="relative">
-        <img
+        <Image
           className="w-full h-full object-cover"
           src="/images/family_photos.png"
           alt="Background"
+          height={100}
+          width={100}
         />
         
         {/* Your content (buttons or other elements) */}

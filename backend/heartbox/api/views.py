@@ -244,10 +244,10 @@ def post(request):
         # Handle GET request
         post_id = request.GET.get('postId')
         if post_id:
-            # If familyId is provided, filter the posts based on the ID
+            # If postId is provided, filter the posts based on the ID
             try:
-                user_posts = Post.objects.filter(id=post_id, members=request.user)
-                serializer = PostSerializer(user_posts, many=True, context={'request': request})
+                user_post = Post.objects.filter(id=post_id, members=request.user)
+                serializer = PostSerializer(user_post, many=True, context={'request': request})
                 if serializer.data == []:
                     return Response('Post Does Not Exist', status=400)
                 return Response(serializer.data, status=200)
@@ -255,12 +255,21 @@ def post(request):
             except ValueError:
                 return Response("Invalid postId format", status=400)
         else:
-            # If familyId is not provided, get all posts for the user
+            # If postId is not provided, get all posts for the user
             user_posts= request.user.posts.all()
 
+        family_id = request.GET.get('familyId')
+        if family_id:
+            try:
+                user_posts = Post.objects.get_posts_in_family(family_id)
+                serializer = PostSerializer(user_posts,many=True)
+                return Response(serializer.data,status=200)
+            except ValueError:
+                return Response("Invalid familyId format", status=400)
         serializer = PostSerializer(user_posts, many=True, context={'request': request})
         return Response(serializer.data, status=200)
 
+        
 
     if request.method == 'POST':
         # Handle POST request
