@@ -1,4 +1,5 @@
 'use client';
+import Image from "next/image";
 import Link from "next/link";
 import { GiHamburgerMenu } from "react-icons/gi";
 import ProfilePic from "./profilePic";
@@ -40,16 +41,19 @@ const NavBar = () =>
                 <div className="flex w-12"></div>
                 <div className="flex items-center"> 
                     <Link href="/home" className="text-black">
-                    <img src="/images/heartbox_logo.png" height={25} width={80} />
+                    <Image alt="Logo" src="/images/heartbox_logo.png" height={25} width={80} />
                     </Link>
                 </div>
 
                 <div className="flex items-center">
                     
                     <button onClick={toggleMenu} className="hover:scale-y-150 transition-all">
-                        <img 
+                        <Image 
+                            alt='Menu Icon'
                             src="/images/3bars.png"
                             className="w-8 h-4 hover:scale-y-110"
+                            width={100}
+                            height={100}
                         />
                     </button>
                    

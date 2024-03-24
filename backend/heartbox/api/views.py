@@ -184,7 +184,6 @@ def family(request):
 def join_family(request):
     if request.method == 'POST':
         data = json.loads(request.body)
-        print(data.get('inviteCode'))
         family = Family.objects.filter(invite_code=data.get('inviteCode')).first()
         if family:
             user = request.user 
@@ -241,62 +240,63 @@ def leave_family(request):
 @permission_classes([IsAuthenticated])
 def post(request):
     if request.method == 'GET':
-        # Handle GET request
+        # # Handle GET request
+        # post_id = request.GET.get('postId')
+        # if post_id:
+        #     # If postId is provided, filter the posts based on the ID
+        #     try:
+        #         user_post = Post.objects.filter(id=post_id, members=request.user)
+        #         serializer = PostSerializer(user_post, many=True, context={'request': request})
+        #         if serializer.data == []:
+        #             return Response('Post Does Not Exist', status=400)
+        #         return Response(serializer.data, status=200)
+
+        #     except ValueError:
+        #         return Response("Invalid postId format", status=400)
+        # else:
+        #     # If postId is not provided, get all posts for the user
+        #     user_posts= request.user.posts.all()
+        #     print(user_posts)
+
+        # family_id = request.GET.get('familyId')
+        # if family_id:
+        #     try:
+        #         user_posts = Post.objects.get_posts_in_family(family_id)
+        #         serializer = PostSerializer(user_posts,many=True)
+        #         return Response(serializer.data,status=200)
+        #     except ValueError:
+        #         return Response("Invalid familyId format", status=400)
+        # serializer = PostSerializer(user_posts, many=True, context={'request': request})
+        # return Response(serializer.data, status=200)
         post_id = request.GET.get('postId')
-        if post_id:
-            # If postId is provided, filter the posts based on the ID
-            try:
-                user_post = Post.objects.filter(id=post_id, members=request.user)
-                serializer = PostSerializer(user_post, many=True, context={'request': request})
-                if serializer.data == []:
-                    return Response('Post Does Not Exist', status=400)
-                return Response(serializer.data, status=200)
-
-            except ValueError:
-                return Response("Invalid postId format", status=400)
-        else:
-            # If postId is not provided, get all posts for the user
-            user_posts= request.user.posts.all()
-
-        family_id = request.GET.get('familyId')
-        if family_id:
-            try:
-                user_posts = Post.objects.get_posts_in_family(family_id)
-                serializer = PostSerializer(user_posts,many=True)
-                return Response(serializer.data,status=200)
-            except ValueError:
-                return Response("Invalid familyId format", status=400)
-        serializer = PostSerializer(user_posts, many=True, context={'request': request})
-        return Response(serializer.data, status=200)
-
-        
+        if not post_id:
+            user = UserProfile.objects.get(email=request.user)
+            print(user.posts)
+            
+            return Response('testing', status=200)
 
     if request.method == 'POST':
-        # Handle POST request
-        user = request.user
-
-        try:
-            data = json.loads(request.body)
-        except json.JSONDecodeError:
-            return Response({"error": "Invalid JSON format"}, status=status.HTTP_400_BAD_REQUEST)
-
-        # Continue processing the request with the 'data' variable.
-        family_id = data.get('familyId')
-        family = Family.objects.filter(id=family_id).first()
-
-        if not family:
-            return Response({"error": f"Family with ID {family_id} not found"}, status=status.HTTP_404_NOT_FOUND)
-
-        # Assuming you have a serializer for the Post model
-        serializer = PostSerializer(data=data, context={'request': request})
-
+        data = request.data
+        data['user']=UserProfile.objects.get(email=request.user).pk
+        serializer = PostSerializer(data=request.data,context={'request':request})
+        
         if serializer.is_valid():
-            post_instance = serializer.save(user=request.user, family=family)
-            user_profile = UserProfile.objects.get(id=request.user.id)
-            user_profile.posts.add(post_instance)
-            family.posts.add(post_instance)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        else:
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            family_id = data['familyId']
+            try:
+                family = get_object_or_404(Family, pk=family_id)
+                print(family)
+            except Family.DoesNotExist:
+                return Response({'error': 'Family does not exist'}, status=status.HTTP_404_NOT_FOUND)
+            
+            post = Post.objects.create_post(
+                title=serializer.validated_data['title'],
+                message=data['description'],
+                user=request.user,
+                family = family,
+                date_posted = serializer.validated_data['datePosted']
+            ) 
+            
+            return Response('Your post was successfully created', status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     return Response('Invalid Method Request', status=status.HTTP_403_FORBIDDEN)

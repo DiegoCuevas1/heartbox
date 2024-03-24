@@ -98,7 +98,7 @@ class PostManager(models.Manager):
             family=family,
             datePosted=date_posted
         )
-        
+        post.save()
         return post
     
     def get_posts_in_family(self, family):

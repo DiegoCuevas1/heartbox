@@ -13,6 +13,8 @@ class PostSerializer(serializers.ModelSerializer):
         fields = ['id', 'user','family','title', 'message', 'datePosted']
         # Include other fields related to the Post model
 
+    
+
 
 class FamilySerializer(serializers.ModelSerializer):
     invite_code = serializers.SerializerMethodField()
