@@ -28,11 +28,12 @@ class FamilySerializer(serializers.ModelSerializer):
     def get_members(self, obj):
         # Check if 'family_id' is present in the context
         request = self.context.get('request')
-        family_id = request.query_params.get('familyId')
-        
-        if family_id and obj.id == int(family_id):
-            # If 'family_id' is present and matches the current family, include the members
-            return UserProfileSerializer(obj.members.all(), many=True).data
+        user = request.user if request.user.is_authenticated else None
+
+        if user and user in obj.members.all():
+            # Exclude the current user from the members list
+            members = obj.members.exclude(pk=user.pk)
+            return UserProfileSerializer(members, many=True).data
 
         return None
     

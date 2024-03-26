@@ -3,17 +3,15 @@ import Link from "next/link";
 import FormComponent from "./form";
 import { useUserContext } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 export default function Login() {
   const { authStatus } = useUserContext();
   const router = useRouter();
-  if (authStatus) {
-    router.push('/families');
-    return (
-      <div>
-        <p>You are already logged in. Redirecting...</p>
-      </div>
-    );
-  }
+  useEffect(() => {
+    if (authStatus) {
+      router.push('/families');
+    }
+  }, [authStatus, router]);
 
   return (
     <div className="flex-col h-[45rem] bg-[#fde9f1]">
