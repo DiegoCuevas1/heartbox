@@ -173,7 +173,7 @@ def family(request):
             # Add the current user to the family members
             request.user.add_to_family(family)
             family.members.add(request.user)
-            return Response(FamilySerializer(family, context={'request': request}).data, status=201)
+            return Response(family.family_name + ' was created successfully.', status=201)
 
         return Response(serializer.errors, status=400)
 
@@ -269,11 +269,46 @@ def post(request):
         # serializer = PostSerializer(user_posts, many=True, context={'request': request})
         # return Response(serializer.data, status=200)
         post_id = request.GET.get('postId')
-        if not post_id:
-            user = UserProfile.objects.get(email=request.user)
-            print(user.posts)
+        # if not post_id:
+        #     user = UserProfile.objects.get(email=request.user)
+        #     print(Post.objects.filter(user=user))
             
-            return Response('testing', status=200)
+        #     return Response('testing', status=200)
+        
+        if post_id:
+            if Post.objects.filter(id=post_id).exists():
+                post = Post.objects.get(id=post_id)
+                serializer = PostSerializer(post)
+                return Response(serializer.data, status=200)   
+            else:
+                return Response("Post does not exist", status=404)
+            
+        family_id = request.GET.get('familyId')
+        if family_id:
+            try:
+                family = Family.objects.get(id=family_id)
+                posts = Post.objects.get_posts_in_family(family)
+                # Serialize posts along with user details
+                serialized_posts = []
+                for post in posts:
+                    user_details = {
+                        'id': post.user.id,
+                        'first_name': post.user.first_name,
+                        'last_name': post.user.last_name,
+                        # Add other user details as needed
+                    }
+                    post_data = {
+                        'post_details': PostSerializer(post).data,
+                        'user_details': user_details
+                    }
+                    serialized_posts.append(post_data)
+
+                return Response(serialized_posts, status=200)
+            except Family.DoesNotExist:
+                return Response("Family not found", status=404)
+            
+            
+
 
     if request.method == 'POST':
         data = request.data

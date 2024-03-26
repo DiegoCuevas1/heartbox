@@ -6,21 +6,18 @@ import toast from "react-hot-toast";
 import { useUserContext } from "@/context/AuthContext";
 import Image from "next/image";
 import FamilyTimeline from "./FamilyTimeline";
+import { User } from "@/app/types/user";
 
 
 type FamilyProps = {
   id:string,
   family_name:string,
   family_description:string,
-  members:Member[],
+  members:User[],
 
 }
 
-type Member = {
-  id: string;
-  first_name: string;
-  last_name: string;
-}
+
 
 
 
@@ -87,7 +84,7 @@ export default  function Page({ params }: { params: { id: string } }) {
       //   }
       // }
     return (
-        <div className="h-screen flex flex-col bg-[#fde9f1]">
+        <div className="pb-48 flex flex-col bg-[#fde9f1]">
             {/* <Link href={'/families'}className="p-4">{'< Back to My Families'}</Link>
             <div className="flex space-x-4">
                 <div className="flex w-96 h-10 ml-4 bg-[#333333]">
@@ -102,7 +99,7 @@ export default  function Page({ params }: { params: { id: string } }) {
                 </div>
                 
             </div> */}
-          <div className="flex-col my-8 mx-4">
+          <div className="flex-col my-8">
             <div className="flex space-x-2">
               <div className="flex-col">
                 <Image
@@ -115,7 +112,7 @@ export default  function Page({ params }: { params: { id: string } }) {
                   {data?.family_name}  
                 </h2>
               </div>
-              <MemberList members={data?.members} signedInUserId={userId}/>
+              <MemberList members={data?.members} signedInUserId={Number(userId)}/>
               
               
             </div>

@@ -1,16 +1,13 @@
+import { User } from "@/app/types/user";
 import Image from "next/image";
 import Link from "next/link";
 
 type MemberListProps =
 {
-    members?: Member[] | null;
-    signedInUserId?:string;
+    members?: User[] | null;
+    signedInUserId?:number;
 }
-type Member = {
-    id: string;
-    first_name: string;
-    last_name: string;
-  }
+
 
 export default function MemberList({members = [],signedInUserId}:MemberListProps){
     const filteredMembers = members?.filter((member) => member.id !== signedInUserId);
@@ -45,7 +42,7 @@ export default function MemberList({members = [],signedInUserId}:MemberListProps
             
             {filteredMembers && filteredMembers.length <= 4 && (
                     <div className="flex items-center justify-center text-center">
-                            <button className="rounded-lg  text-white font-normal px-4 py-1 w-36 flex box-shadow-xl  bg-[#D31C5F]"><span>Add more members</span>  <span className="text-center items-center justify-center pt-2 font-bold text-2xl">+</span></button>
+                            <button className="p-2 bg-[#D31C5F] w-28 flex font-loves font-bold text-white mt-3 rounded-lg shadow-[0_20px_10px_-15px_rgba(0,0,0,.3)] mx-auto hover:scale-125 active:scale-90 transition-all"><span>Add more members</span>  <span className="text-center items-center justify-center pt-2 font-bold text-2xl">+</span></button>
                     </div>
             )}
             {filteredMembers && filteredMembers.length>4 && (
