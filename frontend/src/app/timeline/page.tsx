@@ -1,10 +1,49 @@
-import Timeline from "./timeline";
+'use client';
 
-export default function Home() {
+import { useEffect, useState } from "react";
+import { Post } from "../types/post";
+
+async function getData() {
+  try {
+    const res = await fetch(`http://localhost:8000/api/user/posts`, {
+      method: "GET",
+      credentials: "include",
+    });
+
+    if (!res.ok) {
+      // Handle error cases
+      console.log('Failed Fetch');
+      return Error()
+    }
+    
+    const data = await res.json();
+    // Process the data as needed
+    return data; // Add this line to return the data from the function
+  } catch (error:any) {
+    console.error('Error:', error.message);
+    throw error; // Rethrow the error to be caught by the calling code
+  }
+}
+
+export default function Timeline() {
+    const [posts, setPosts] = useState<Post[]>()
+    useEffect(()=>{
+      async function fetchData() {
+          try {
+            const fetchedData = await getData();
+            // Process data or set it to state as needed
+            setPosts(fetchedData);
+          } catch (error: any) {
+            console.error('Error in fetchData:', error.message);
+          }
+        };
+        fetchData();
+      }
+  ,[])
     return (
       <>
-        <div className="flex bg-default">
-
+        <div className="flex-col bg-main text-default h-screen">
+         
         </div>
      </>
     )
