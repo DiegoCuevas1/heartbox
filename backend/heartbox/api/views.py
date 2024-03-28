@@ -144,6 +144,7 @@ def family(request):
         if family_id:
             # If familyId is provided, filter the families based on the ID
             try:
+                print("hello")
                 user_families = Family.objects.filter(id=family_id, members=request.user)
                 serializer = FamilySerializer(user_families, many=True, context={'request': request})
                 if serializer.data == []:
@@ -173,6 +174,7 @@ def family(request):
             # Add the current user to the family members
             request.user.add_to_family(family)
             family.members.add(request.user)
+            
             return Response(family.family_name + ' was created successfully.', status=201)
 
         return Response(serializer.errors, status=400)

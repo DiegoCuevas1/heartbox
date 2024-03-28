@@ -2,9 +2,11 @@ import Timeline from "./timeline";
 
 export default function Home() {
     return (
-      <div className="bg-[#]">		
-        <Timeline />
-      </div>
+      <>
+        <div className="flex bg-default">
+
+        </div>
+     </>
     )
   }
   

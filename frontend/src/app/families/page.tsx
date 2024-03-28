@@ -12,6 +12,7 @@ export default function Home() {
             <button className="p-2 bg-[#D31C5F] w-36 text-xl font-loves font-bold text-white mt-7 rounded-lg shadow-[0_20px_10px_-15px_rgba(0,0,0,.3)] mx-auto hover:scale-125 active:scale-90 transition-all">
                 <Link href={"/families/add-family"}>Add Family</Link>
             </button>
+        
         </div>
     )
 }

@@ -1,12 +1,5 @@
 import { Post } from "@/app/types/post";
 import Image from "next/image";
-import Link from "next/link";
-
-type FamilyProps = 
-{
-    id:string,
-    family_name:string,
-}
 
 export default function FamilyPostCard({post}:{post:Post})
 {
@@ -23,9 +16,7 @@ export default function FamilyPostCard({post}:{post:Post})
                     <p className="mt-2 font-bold">{post.post_details.title}</p>
                 </div>
             </div>
-            <p className="mx-4 bg-[#fdeff1] border-2 border-[#d31c60] p-2 rounded-xl">{post.post_details.message}</p>
-            
-            
+            <p className="mx-4 bg-[#fdeff1] border-2 border-[#d31c60] p-2 rounded-xl">{post.post_details.message}</p> 
         </div>
     )
 }
