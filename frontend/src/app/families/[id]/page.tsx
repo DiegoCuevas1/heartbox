@@ -100,7 +100,7 @@ export default  function Page({ params }: { params: { id: string } }) {
                 
             </div> */}
           <div className="flex-col my-8">
-            <div className="flex space-x-2">
+            <div className="flex space-x-2 justify-center">
               <div className="flex-col">
                 <Image
                   src="/images/family_heartbox.png"

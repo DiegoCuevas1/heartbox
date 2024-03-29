@@ -11,14 +11,14 @@ type MemberListProps =
 
 export default function MemberList({members = [],signedInUserId}:MemberListProps){
     return(
-        <div className="flex-col flex space-y-2">
+        <div className="flex-col flex space-y-2 ">
             <h2 className="mx-auto text-3xl font-loves font-bold border-b-2 border-[#d31c60]">Members</h2>
             
             <div className="flex bg-[#f3d8e6] flex-col border-2 border-[#d31c60] rounded-xl overflow-auto max-h-[calc(40vh-80px)] mr-4">
                 {members && members.length<1 && <p className="p-2">No other group members...</p>}
                 {members && members.length>=1 &&members.map((member,index) => (
                     <div key={member.id} className="flex flex-col">
-                        <div className="flex py-2 gap-2 px-12">
+                        <div className="flex gap-2 items-center py-2 px-4 justify-center">
                             <Image
                                 src="/images/default_profpic.png"
                                 width={40}

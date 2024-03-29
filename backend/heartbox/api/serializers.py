@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Family, Notification, UserProfile, Post
+from .models import Family,  UserProfile, Post
 
 class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:
@@ -8,6 +8,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
         # You can include other fields as needed
 
 class PostSerializer(serializers.ModelSerializer):
+    datePosted = serializers.DateField(format='%m-%d-%Y')
     class Meta:
         model = Post
         fields = ['id', 'user','family','title', 'message', 'datePosted']
@@ -59,7 +60,7 @@ class FamilySerializer(serializers.ModelSerializer):
 
         return None
     
-class NotificationSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Notification
-        fields = ['id','user_id','message','notification_type']
+# class NotificationSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = Notification
+#         fields = ['id','user_id','message','notification_type']

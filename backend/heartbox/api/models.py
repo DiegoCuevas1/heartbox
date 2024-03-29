@@ -9,18 +9,18 @@ from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
 
 class UserProfileManager(BaseUserManager):
-    def create_user(self, email, first_name, last_name, birthdate, password=None):
+    def create_user(self, email, first_name, last_name, birthdate, pin, password=None,):
         if not email:
             raise ValueError(_('You must provide an email address'))
         
         email = self.normalize_email(email)
-        user = self.model(email=email, last_name=last_name, first_name=first_name, birthdate=birthdate)
+        user = self.model(email=email, last_name=last_name, first_name=first_name, birthdate=birthdate,pin=pin)
         user.set_password(password)
         user.save(using=self._db)
         return user 
 
-    def create_superuser(self, email, first_name, last_name, password):
-        user = self.create_user(email, first_name, last_name, password)
+    def create_superuser(self, email, first_name, last_name, birthdate, password, pin):
+        user = self.create_user(email, first_name, last_name, birthdate, pin, password)
         user.is_superuser = True
         user.is_staff = True
         user.save(using=self._db)
@@ -31,17 +31,18 @@ class UserProfile(AbstractBaseUser, PermissionsMixin):
     last_name = models.CharField(_('lastName'), max_length=100)
     first_name = models.CharField(_('firstName'), max_length=100)
     birthdate = models.DateField(_('birthdate'), blank=True, null=True)
+    pin = models.CharField(_('PIN'), max_length=100)
     posts = models.ManyToManyField('Post', related_name='user_posts', related_query_name='user_post')
-    pin = models.CharField(_('PIN'), max_length=6)
+    is_staff = models.BooleanField(_('staff status'), default=False)
     objects = UserProfileManager()
     families = models.ManyToManyField('Family', related_name='family_members',related_query_name="family_member")
-    notifications = models.ManyToManyField('Notification',related_name="notifications",related_query_name="notification")
+
     USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['last_name', 'first_name']
+    REQUIRED_FIELDS = ['last_name', 'first_name','birthdate','pin']
 
 
     def __str__(self):
-        return self.email
+        return self.first_name + ' ' + self.last_name
     def add_to_family(self, family):
         self.families.add(family)
         
@@ -116,20 +117,20 @@ class Post(models.Model):
     # For video hosting implementation:
     # video = models.CharField(max_length=500)
 
-class NotificationManager(models.Manager):
-    def create_notif(self, message, notification_type, timestamp=None):
-        notif = self.create(
-            message=message,
-            notification_type=notification_type,
-            timestamp=timestamp or timezone.now()
-        )
-        notif.save()
-        return notif
+# class NotificationManager(models.Manager):
+#     def create_notif(self, message, notification_type, timestamp=None):
+#         notif = self.create(
+#             message=message,
+#             notification_type=notification_type,
+#             timestamp=timestamp or timezone.now()
+#         )
+#         notif.save()
+#         return notif
 
-class Notification(models.Model):
-    id = models.AutoField(primary_key=True)
-    message = models.CharField(max_length=300)
-    notification_type = models.CharField(max_length=50)
-    timestamp = models.DateTimeField(default=timezone.now)
+# class Notification(models.Model):
+#     id = models.AutoField(primary_key=True)
+#     message = models.CharField(max_length=300)
+#     notification_type = models.CharField(max_length=50)
+#     timestamp = models.DateTimeField(default=timezone.now)
 
-    objects=NotificationManager()
+#     objects=NotificationManager()

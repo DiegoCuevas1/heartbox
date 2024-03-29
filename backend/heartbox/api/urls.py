@@ -12,6 +12,5 @@ urlpatterns = [
     path('user/families/leave-family',views.leave_family,name="leave_family"),
     path('user/posts',views.post,name="post"),
     path('user/posts/<int:familyId>/',views.post,name="posts"),
-    path('user/timeline',views.family_posts,name="timeline"),
     path("user/posts/<int:postId>/", views.post, name="posts"),
 ]
