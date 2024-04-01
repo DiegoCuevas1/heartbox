@@ -7,6 +7,7 @@ import { useUserContext } from "@/context/AuthContext";
 import Image from "next/image";
 import FamilyTimeline from "./FamilyTimeline";
 import { User } from "@/app/types/user";
+import { useRouter } from "next/navigation";
 
 
 type FamilyProps = {
@@ -30,23 +31,20 @@ async function getData(familyId:string) {
 
     if (!res.ok) {
       // Handle error cases
-      console.log('Failed Fetch');
-      return Error()
+      throw Error("You are not a member of this family")
     }
 
     const data = await res.json();
     // Process the data as needed
-    
     return data; // Add this line to return the data from the function
   } catch (error:any) {
-    console.error('Error:', error.message);
-    throw error; // Rethrow the error to be caught by the calling code
+    return error; // Rethrow the error to be caught by the calling code
   }
 }
 export default  function Page({ params }: { params: { id: string } }) {
   const [data, setData] = useState<FamilyProps>();
   const { userId } = useUserContext();
-  
+  const router =useRouter();
 
   useEffect(() => {
     async function fetchData() {
@@ -56,10 +54,11 @@ export default  function Page({ params }: { params: { id: string } }) {
         setData(fetchedData[0]);
       } catch (error: any) {
         console.error('Error in fetchData:', error.message);
+        router.push("/families")
       }
     };
     fetchData();
-  }, [params.id]);
+  }, [router,params.id]);
 
       // const leaveFamily = async () =>
       // {

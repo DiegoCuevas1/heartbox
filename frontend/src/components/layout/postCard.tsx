@@ -1,10 +1,10 @@
 import { Post } from "@/app/types/post";
 import Image from "next/image";
 
-export default function FamilyPostCard({post}:{post:Post})
+export default function PostCard({post}:{post:Post})
 {
     return(
-        <div className="flex-col flex my-4 space-y-2 ">
+        <div className="flex-col flex space-y-2 ">
             <div className="flex items-center space-x-2 px-4 ">
                 <Image width={45} height={45} src={"/images/default_profpic.png"} alt={`${post.user_details.first_name} ${post.user_details.last_name}`} /> 
                 

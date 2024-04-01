@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Post } from "../types/post";
-
+import PostCard from "@/components/layout/postCard"
 async function getData() {
   try {
     const res = await fetch(`http://localhost:8000/api/user/posts`, {
@@ -42,8 +42,12 @@ export default function Timeline() {
   ,[])
     return (
       <>
-        <div className="flex-col bg-main text-default h-screen">
-         
+        <div className="flex-col bg-main text-default space-y-2 pt-4 h-screen">
+        {posts && Array.isArray(posts) && posts.map((post,index) => (
+              <div key={index} className="flex-col">
+                    <PostCard post={post} />
+              </div>
+                ))}
         </div>
      </>
     )

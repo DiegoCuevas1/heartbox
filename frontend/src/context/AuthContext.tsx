@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { setSignIn, setSignOut } from "@/utils/NavAuthToggle";
 import toast from "react-hot-toast";
+import { useRouter } from "next/navigation";
 
 
 type UserProviderType = {
@@ -34,7 +35,7 @@ export const UserContextProvider = ({
   const [userFN, setUserFN] = useState<string>("");
   const [userLN, setUserLN] = useState<string>("");
   const [authStatus, setAuthStatus] = useState<boolean>(false);
-
+  const router = useRouter();
   useEffect(() => {
     const checkLogin = async () => {
       try {
@@ -58,8 +59,14 @@ export const UserContextProvider = ({
             localStorage.setItem('userLN', user.l_name);
             localStorage.setItem('authStatus', 'true');
           }
+          else{
+            
+            router.push('/auth/sign-in')
+            toast.error('Not Logged In.')
+          }
         } else {
-          toast.error(data.messages);
+          toast.error(res.statusText);
+         
         }
       } catch (error:any) {
         console.error('Error:', error.message);
@@ -70,7 +77,7 @@ export const UserContextProvider = ({
     (async () => {
       await checkLogin();
     })();
-  }, []);
+  }, [router]);
   
 
   useEffect(() => {
