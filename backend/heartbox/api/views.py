@@ -13,7 +13,7 @@ from rest_framework.decorators import api_view,authentication_classes, permissio
 from rest_framework.response import Response
 from rest_framework import status
 
-from .models import Family, Notification, UserProfile, Post
+from .models import Family, UserProfile, Post
 from .serializers import FamilySerializer, UserProfileSerializer, PostSerializer
 from .utils import is_name_valid
 
@@ -65,8 +65,7 @@ def user_signup(request):
         except ValidationError as e:
             return Response("Password did not pass password validation", status=status.HTTP_400_BAD_REQUEST)
 
-        user = db.objects.create_user(email=email, password=password, first_name=first_name, last_name=last_name, birthdate=birthdate)
-        user.pin = pin
+        user = db.objects.create_user(email=email, password=password, first_name=first_name, last_name=last_name, birthdate=birthdate,pin=pin)
         return Response("User signup was successful", status=status.HTTP_200_OK)
 
 @api_view(['DELETE'])
@@ -93,42 +92,6 @@ def check_login(request):
             return JsonResponse({"data": json.dumps(ret_user), "message": "Logged In"}, status=202)
         except:
             return JsonResponse({"message": "Error loading logged in user data"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-@api_view(['POST', 'GET', 'PATCH'])
-def post(request):
-    if request.method == 'POST':
-        email = request.session.get('email',None)
-        if email is None or email == '':
-            return Response('Access Denied Have Not Logged in', status=403)
-        data = request.data
-        db = get_user_model()
-        if not db.objects.filter(email=email).exists():
-            return Response('User with email {0} does not exist')
-        
-@api_view(['GET'])
-@authentication_classes([SessionAuthentication, BasicAuthentication])
-@permission_classes([IsAuthenticated])
-def family_posts(request):
-    if request.method == 'GET':
-        # Ensure the user is authenticated
-        if not request.user.is_authenticated:
-            return Response({"detail": "Authentication credentials were not provided."},
-                            status=status.HTTP_401_UNAUTHORIZED)
-
-        # Get the user profile using the authenticated user
-        user_families = request.user.families.all()
-        print(user_families)
-
-        # # Get the families that the user is in
-        # user_families = user_profile.families.all()
-
-        # Get the posts in the user's families
-        family_posts = Post.objects.filter(family__in=user_families)
-
-        # Serialize the posts or process them as needed
-        serializer = PostSerializer(family_posts, many=True)
-
-        return Response(serializer.data, status=status.HTTP_200_OK)
         
 @api_view(['GET','POST'])
 @authentication_classes([SessionAuthentication, BasicAuthentication])
@@ -173,7 +136,8 @@ def family(request):
             # Add the current user to the family members
             request.user.add_to_family(family)
             family.members.add(request.user)
-            return Response(FamilySerializer(family, context={'request': request}).data, status=201)
+            
+            return Response(family.family_name + ' was created successfully.', status=201)
 
         return Response(serializer.errors, status=400)
 
@@ -192,16 +156,16 @@ def join_family(request):
             user.add_to_family(family)
             family.members.add(user)
 
-            other_members = family.members.exclude(pk=user.pk)
-            message = f"{user.first_name} {user.last_name} joined the {family.family_name} family."
-            timestamp = timezone.now()
-            notification = Notification.objects.create_notif(
-                    message=message,
-                    notification_type='join_family',
-                    timestamp=timestamp
-                )
-            for member in other_members:
-                member.notifications.add(notification)
+            # other_members = family.members.exclude(pk=user.pk)
+            # message = f"{user.first_name} {user.last_name} joined the {family.family_name} family."
+            # timestamp = timezone.now()
+            # # notification = Notification.objects.create_notif(
+            # #         message=message,
+            # #         notification_type='join_family',
+            # #         timestamp=timestamp
+            # #     )
+            # # for member in other_members:
+            # #     member.notifications.add(notification)
 
 
             return Response('Successfully joined the family!',status=200)
@@ -240,63 +204,94 @@ def leave_family(request):
 @permission_classes([IsAuthenticated])
 def post(request):
     if request.method == 'GET':
-        # # Handle GET request
-        # post_id = request.GET.get('postId')
-        # if post_id:
-        #     # If postId is provided, filter the posts based on the ID
-        #     try:
-        #         user_post = Post.objects.filter(id=post_id, members=request.user)
-        #         serializer = PostSerializer(user_post, many=True, context={'request': request})
-        #         if serializer.data == []:
-        #             return Response('Post Does Not Exist', status=400)
-        #         return Response(serializer.data, status=200)
-
-        #     except ValueError:
-        #         return Response("Invalid postId format", status=400)
-        # else:
-        #     # If postId is not provided, get all posts for the user
-        #     user_posts= request.user.posts.all()
-        #     print(user_posts)
-
-        # family_id = request.GET.get('familyId')
-        # if family_id:
-        #     try:
-        #         user_posts = Post.objects.get_posts_in_family(family_id)
-        #         serializer = PostSerializer(user_posts,many=True)
-        #         return Response(serializer.data,status=200)
-        #     except ValueError:
-        #         return Response("Invalid familyId format", status=400)
-        # serializer = PostSerializer(user_posts, many=True, context={'request': request})
-        # return Response(serializer.data, status=200)
         post_id = request.GET.get('postId')
-        if not post_id:
-            user = UserProfile.objects.get(email=request.user)
-            print(user.posts)
+        family_id = request.GET.get('familyId')
+        if post_id:
+            if Post.objects.filter(id=post_id).exists():
+                post = Post.objects.get(id=post_id)
+                serializer = PostSerializer(post)
+                return Response(serializer.data, status=200)
+            else:
+                return Response("Post does not exist", status=404)
             
-            return Response('testing', status=200)
+        if family_id:
+            try:
+                family = Family.objects.get(id=family_id)
+                if request.user in family.members.all():
+                    posts = Post.objects.get_posts_in_family(family)
+                    # Serialize posts along with user details
+                    serialized_posts = []
+                    for post in posts:
+                        user_details = {
+                            'id': post.user.id,
+                            'first_name': post.user.first_name,
+                            'last_name': post.user.last_name,
+                            # Add other user details as needed
+                        }
+                        post_data = {
+                            'post_details': PostSerializer(post).data,
+                            'user_details': user_details
+                        }
+                        serialized_posts.append(post_data)
+
+                    return Response(serialized_posts, status=200)
+                else:
+                    return Response("User is not a member of this family", status=status.HTTP_403_FORBIDDEN)
+            except Family.DoesNotExist:
+                return Response("Family not found", status=404)
+        
+        user = UserProfile.objects.get(id=request.user.id)
+        families = user.families.all()
+        family_ids = [family.id for family in families]
+
+        posts = Post.objects.filter(family__id__in=family_ids).order_by('-datePosted')
+        serialized_posts = []
+        for post in posts:
+            user_details = {
+                'id': post.user.id,
+                'first_name': post.user.first_name,
+                'last_name': post.user.last_name,
+                # Add other user details as needed
+            }
+            post_data = {
+                'post_details': PostSerializer(post).data,
+                'user_details': user_details
+            }
+            serialized_posts.append(post_data)
+
+        return Response(serialized_posts,200)
+
 
     if request.method == 'POST':
-        data = request.data
-        data['user']=UserProfile.objects.get(email=request.user).pk
-        serializer = PostSerializer(data=request.data,context={'request':request})
+       
+        # data = request.data
+        try:
+            # Assuming email is passed in the request data
+            user_profile = UserProfile.objects.get(id=request.user.id)
+        except UserProfile.DoesNotExist:
+            return Response({'error': 'User profile does not exist'}, status=status.HTTP_404_NOT_FOUND)
+        
+        data= request.data
+        data['user'] = request.user.id
+        serializer = PostSerializer(data=data,context={'request':request})      
+        
+        # serializer = PostSerializer(data=request.data,context={'request':request})
         
         if serializer.is_valid():
-            family_id = data['familyId']
+            family_id=data['familyId']
             try:
-                family = get_object_or_404(Family, pk=family_id)
-                print(family)
+                family = get_object_or_404(Family, id=family_id)
             except Family.DoesNotExist:
                 return Response({'error': 'Family does not exist'}, status=status.HTTP_404_NOT_FOUND)
-            
             post = Post.objects.create_post(
-                title=serializer.validated_data['title'],
-                message=data['description'],
-                user=request.user,
-                family = family,
-                date_posted = serializer.validated_data['datePosted']
+                title=request.data['title'],
+                message=request.data['description'],
+                user=UserProfile.objects.get(id=request.user.id),
+                family = Family.objects.get(id=request.data['familyId']),
+                date_posted = request.data['datePosted']
             ) 
-            
             return Response('Your post was successfully created', status=status.HTTP_201_CREATED)
+        
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
+    
     return Response('Invalid Method Request', status=status.HTTP_403_FORBIDDEN)

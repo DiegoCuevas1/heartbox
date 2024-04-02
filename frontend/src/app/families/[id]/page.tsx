@@ -6,21 +6,19 @@ import toast from "react-hot-toast";
 import { useUserContext } from "@/context/AuthContext";
 import Image from "next/image";
 import FamilyTimeline from "./FamilyTimeline";
+import { User } from "@/app/types/user";
+import { useRouter } from "next/navigation";
 
 
 type FamilyProps = {
   id:string,
   family_name:string,
   family_description:string,
-  members:Member[],
+  members:User[],
 
 }
 
-type Member = {
-  id: string;
-  first_name: string;
-  last_name: string;
-}
+
 
 
 
@@ -33,23 +31,20 @@ async function getData(familyId:string) {
 
     if (!res.ok) {
       // Handle error cases
-      console.log('Failed Fetch');
-      return Error()
+      throw Error("You are not a member of this family")
     }
 
     const data = await res.json();
     // Process the data as needed
-    
     return data; // Add this line to return the data from the function
   } catch (error:any) {
-    console.error('Error:', error.message);
-    throw error; // Rethrow the error to be caught by the calling code
+    return error; // Rethrow the error to be caught by the calling code
   }
 }
 export default  function Page({ params }: { params: { id: string } }) {
   const [data, setData] = useState<FamilyProps>();
   const { userId } = useUserContext();
-  
+  const router =useRouter();
 
   useEffect(() => {
     async function fetchData() {
@@ -59,10 +54,11 @@ export default  function Page({ params }: { params: { id: string } }) {
         setData(fetchedData[0]);
       } catch (error: any) {
         console.error('Error in fetchData:', error.message);
+        router.push("/families")
       }
     };
     fetchData();
-  }, [params.id]);
+  }, [router,params.id]);
 
       // const leaveFamily = async () =>
       // {
@@ -87,7 +83,7 @@ export default  function Page({ params }: { params: { id: string } }) {
       //   }
       // }
     return (
-        <div className="h-screen flex flex-col bg-[#fde9f1]">
+        <div className="pb-48 flex flex-col bg-[#fde9f1]">
             {/* <Link href={'/families'}className="p-4">{'< Back to My Families'}</Link>
             <div className="flex space-x-4">
                 <div className="flex w-96 h-10 ml-4 bg-[#333333]">
@@ -102,8 +98,8 @@ export default  function Page({ params }: { params: { id: string } }) {
                 </div>
                 
             </div> */}
-          <div className="flex-col my-8 mx-4">
-            <div className="flex space-x-2">
+          <div className="flex-col my-8">
+            <div className="flex space-x-2 justify-center">
               <div className="flex-col">
                 <Image
                   src="/images/family_heartbox.png"
@@ -115,7 +111,7 @@ export default  function Page({ params }: { params: { id: string } }) {
                   {data?.family_name}  
                 </h2>
               </div>
-              <MemberList members={data?.members} signedInUserId={userId}/>
+              <MemberList members={data?.members} signedInUserId={Number(userId)}/>
               
               
             </div>

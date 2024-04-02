@@ -1,9 +1,10 @@
-import type { Member } from ".";
+import { User } from "./user";
+
 interface Family {
     id: number;
     family_name: string;
     family_description: string;
     inviteCode: string;
-    members: Member[];
+    members: User[];
   }
   export type { Family };

@@ -1,0 +1,21 @@
+
+services:
+  web:
+    build: .
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    depends_on:
+      - my-postgres
+    restart: always
+    environment:
+      DJANGO_WATCHMAN_TIMEOUT: 20
+    
+
+  
+   
+  my-postgres:
+    image: postgres
+    environment:
+      POSTGRES_PASSWORD: mypassword
