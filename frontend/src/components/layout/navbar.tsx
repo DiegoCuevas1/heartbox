@@ -9,7 +9,7 @@ import { useUserContext } from "@/context/AuthContext";
 
 const NavBar = () =>
 {
-    const { authStatus } = useUserContext();
+    const { userId, userFN, userLN, authStatus } = useUserContext();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
 
     const menuRef = useRef<HTMLDivElement | null>(null);
@@ -40,7 +40,7 @@ const NavBar = () =>
             <div className="flex fixed z-[1000] justify-around w-screen px-8 items-center h-28 bg-gradient-to-l from-[#f4a7a7] via-[#f9c0c1] to-[#f4a7a7]">
                 <div className="flex w-12"></div>
                 <div className="flex items-center"> 
-                    <Link href="/home" className="text-black">
+                    <Link href={authStatus?"/timeline":'/home'} className="text-black">
                     <Image alt="Logo" src="/images/heartbox_logo.png" height={25} width={80} />
                     </Link>
                 </div>
@@ -60,7 +60,7 @@ const NavBar = () =>
                     {isMenuOpen && (
                     <div id="main-menu-id" ref={menuRef} className="z-[1000] fixed top-[112px] flex-col right-0 w-[190px] text-white shadow-xl rounded-bl-sm  flex bg-[#fbd1d1]">
                         <div className="flex justify-right flex-col mx-auto text-right space-y-2 mt-2">
-                            <Link href={"/home"} onClick={toggleMenu} className="font-loves font-bold text-black text-xl border-b-[1.5px]  border-[#d9a4a4]">HOME</Link>
+                            <Link href={authStatus?"/timeline":'/home'} onClick={toggleMenu} className="font-loves font-bold text-black text-xl border-b-[1.5px]  border-[#d9a4a4]">HOME</Link>
                             {authStatus && <Link href={"/home"} onClick={toggleMenu} className="font-loves font-bold text-black text-xl border-b-[1.5px]  border-[#d9a4a4]">Notifications</Link>}
                             {authStatus && <Link href={"/home"} onClick={toggleMenu} className="font-loves font-bold text-black text-xl border-b-[1.5px]  border-[#d9a4a4]">Families</Link>}
                             <Link href={"/home"} onClick={toggleMenu} className="font-loves font-bold text-black text-xl border-b-[1.5px] border-[#d9a4a4]">About Us</Link>

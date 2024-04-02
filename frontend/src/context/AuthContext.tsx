@@ -77,10 +77,7 @@ export const UserContextProvider = ({
     (async () => {
       await checkLogin();
     })();
-  }, [router]);
-  
 
-  useEffect(() => {
     setSignIn(() => setAuthStatus(true));
     setSignOut(() => {
       setUserId("");
@@ -88,8 +85,8 @@ export const UserContextProvider = ({
       setUserLN("");
       setAuthStatus(false);
     });
-  }, []);
-
+  }, [router]);
+  
   const providerVal: UserProviderType = {
     userId,
     setUserId,

@@ -3,11 +3,8 @@ import { useUserContext } from "@/context/AuthContext";
 
 const ProfilePic = () =>
 {
-    const context = useUserContext();
-    if (!context) return <div>Loading ...</div>;
-
-    const {authStatus} = context;
-
+    const {userId, userFN, userLN, authStatus } = useUserContext();
+    if (!userId) return <div>Loading ...</div>;
     if(!authStatus)
     {
         return(

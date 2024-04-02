@@ -6,7 +6,7 @@ export default function PostCard({post}:{post:Post})
     return(
         <div className="flex-col flex space-y-2 ">
             <div className="flex items-center space-x-2 px-4 ">
-                <Image width={45} height={45} src={"/images/default_profpic.png"} alt={`${post.user_details.first_name} ${post.user_details.last_name}`} /> 
+                <Image width={45} height={45} src={"/images/default_profpic.png"} alt={`${post.user_details.first_name} ${post.user_details.last_name}'s profile picture`} /> 
                 
                 <div className="flex-col flex space-y-0 ">
                     <div className="grid grid-cols-7" >
