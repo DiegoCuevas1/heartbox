@@ -53,7 +53,6 @@ export default function FormComponent()
             familyId: selectedFamily?.id,
             title: formData.get('title'),
             description: formData.get('description'),
-            datePosted: new Date().toISOString().split('T')[0],
         }
         const res = await fetch('http://localhost:8000/api/user/posts',{
             headers: {

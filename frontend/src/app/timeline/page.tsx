@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Post } from "../types/post";
-import PostCard from "@/components/layout/postCard"
+import PostCard from "@/components/postCard"
 async function getData() {
   try {
     const res = await fetch(`http://localhost:8000/api/user/posts`, {

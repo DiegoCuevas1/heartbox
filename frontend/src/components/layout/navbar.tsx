@@ -1,8 +1,6 @@
 'use client';
 import Image from "next/image";
 import Link from "next/link";
-import { GiHamburgerMenu } from "react-icons/gi";
-import ProfilePic from "./profilePic";
 import { useEffect, useRef, useState } from "react";
 import Logout from "../logoutbtn";
 import { useUserContext } from "@/context/AuthContext";

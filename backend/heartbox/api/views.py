@@ -273,6 +273,7 @@ def post(request):
         
         data= request.data
         data['user'] = request.user.id
+        data['datePosted'] = timezone.now() 
         serializer = PostSerializer(data=data,context={'request':request})      
         
         # serializer = PostSerializer(data=request.data,context={'request':request})
@@ -288,7 +289,7 @@ def post(request):
                 message=request.data['description'],
                 user=UserProfile.objects.get(id=request.user.id),
                 family = Family.objects.get(id=request.data['familyId']),
-                date_posted = request.data['datePosted']
+                date_posted = data['datePosted']
             ) 
             return Response('Your post was successfully created', status=status.HTTP_201_CREATED)
         

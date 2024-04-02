@@ -111,7 +111,7 @@ class Post(models.Model):
     family = models.ForeignKey(Family,on_delete=models.CASCADE,null=True)
     message = models.TextField(default="default")
     title = models.CharField(max_length=200)
-    datePosted = models.DateField()
+    datePosted = models.DateTimeField(auto_now_add=True)
 
     objects = PostManager()
     # For video hosting implementation:

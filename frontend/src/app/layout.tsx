@@ -22,7 +22,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
-        <Toaster />
+        <Toaster
+        position="top-left"
+        reverseOrder={false}
+         />
         <UserContextProvider>
           <NavBar />
           <div className='pt-28'>{children}</div>

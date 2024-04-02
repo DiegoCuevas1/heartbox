@@ -115,7 +115,7 @@ export default  function Page({ params }: { params: { id: string } }) {
               
               
             </div>
-            <div className="mt-2"> <FamilyTimeline id={params.id}></FamilyTimeline> </div>
+            <div className="mt-2 "> <FamilyTimeline id={params.id}></FamilyTimeline> </div>
             
           </div>
           
