@@ -21,7 +21,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={inter.className}>
+      <body className={`bg-main ${inter.className}`}>
         <Toaster
         position="top-left"
         reverseOrder={false}

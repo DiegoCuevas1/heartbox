@@ -42,12 +42,12 @@ export default function Timeline() {
   ,[])
     return (
       <>
-        <div className="flex-col bg-main text-default space-y-2 pt-4 h-screen">
-        {posts && Array.isArray(posts) && posts.map((post,index) => (
+        <div className="flex-col bg-main text-default space-y-2 pt-4 h-full">
+            {posts && Array.isArray(posts) && posts.map((post,index) => (
               <div key={index} className="flex-col">
                     <PostCard post={post} />
               </div>
-                ))}
+            ))}
         </div>
      </>
     )

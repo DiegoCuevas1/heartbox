@@ -209,8 +209,15 @@ def post(request):
         if post_id:
             if Post.objects.filter(id=post_id).exists():
                 post = Post.objects.get(id=post_id)
-                serializer = PostSerializer(post)
-                return Response(serializer.data, status=200)
+                serializer_data = {
+                    'user_details':{
+                        'id':post.user.id,
+                        'first_name': post.user.first_name,
+                        'last_name': post.user.last_name,
+                    },
+                    'post_details':PostSerializer(post).data
+                }
+                return Response(serializer_data, status=200)
             else:
                 return Response("Post does not exist", status=404)
             
