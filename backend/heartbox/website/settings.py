@@ -181,3 +181,9 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 AUTH_USER_MODEL = 'api.UserProfile'
+
+DEFAULT_FILE_STORAGE = "storages.backends.s3.S3Storage"
+AWS_S3_ACCESS_KEY_ID= os.getenv('AWS_S3_ACCESS_KEY_ID')
+AWS_S3_SECRET_ACCESS_KEY= os.getenv('AWS_S3_SECRET_ACCESS_KEY')
+AWS_STORAGE_BUCKET_NAME = 'dev-heartbox'
+AWS_S3_REGION_NAME = 'us-east-2'

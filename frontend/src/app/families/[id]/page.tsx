@@ -41,9 +41,8 @@ async function getData(familyId:string) {
     return error; // Rethrow the error to be caught by the calling code
   }
 }
-export default  function Page({ params }: { params: { id: string } }) {
+export default function Page({ params }: { params: { id: string } }) {
   const [data, setData] = useState<FamilyProps>();
-  const { userId } = useUserContext();
   const router =useRouter();
 
   useEffect(() => {
@@ -84,7 +83,7 @@ export default  function Page({ params }: { params: { id: string } }) {
       // }
     return (
         <div className="pb-48 flex flex-col bg-[#fde9f1]">
-            {/* <Link href={'/families'}className="p-4">{'< Back to My Families'}</Link>
+            {/* <Link href={'/families'} className="p-4">{'< Back to My Families'}</Link>
             <div className="flex space-x-4">
                 <div className="flex w-96 h-10 ml-4 bg-[#333333]">
                     
@@ -100,22 +99,20 @@ export default  function Page({ params }: { params: { id: string } }) {
             </div> */}
           <div className="flex-col my-8">
             <div className="flex space-x-2 justify-center">
-              <div className="flex-col">
+              <div className="flex-col flex">
                 <Image
                   src="/images/family_heartbox.png"
                   width={200}
                   height={100}
                   alt={`Selected Heartbox Picture`}
                 />
-                <h2 className="flex w-3/5 shadow-xl text-center justify-center font-loves text-lg font-bold mx-auto bg-[#fdeff1] py-1 border-2 border-[#bb474d] rounded-xl">
+                <h2 className="shadow-xl ml-2 text-center font-loves text-lg font-bold mx-auto bg-[#fdeff1] py-1  border-2 border-[#bb474d] rounded-xl">
                   {data?.family_name}  
                 </h2>
               </div>
-              <MemberList members={data?.members} signedInUserId={Number(userId)}/>
-              
-              
+              <MemberList members={data?.members}/>
             </div>
-            <div className="mt-2"> <FamilyTimeline id={params.id}></FamilyTimeline> </div>
+            <div className="mt-2 "> <FamilyTimeline id={params.id}></FamilyTimeline> </div>
             
           </div>
           

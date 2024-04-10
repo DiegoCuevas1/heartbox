@@ -13,6 +13,8 @@ type UserProviderType = {
   setUserFN: React.Dispatch<React.SetStateAction<string>>;
   userLN: string;
   setUserLN: React.Dispatch<React.SetStateAction<string>>;
+  profilePic: string;
+  setProfilePic: React.Dispatch<React.SetStateAction<string>>; // Setter function for profile picture URL
   authStatus: boolean;
   setAuthStatus: React.Dispatch<React.SetStateAction<boolean>>;
 };
@@ -34,6 +36,7 @@ export const UserContextProvider = ({
   const [userId, setUserId] = useState<string>("");
   const [userFN, setUserFN] = useState<string>("");
   const [userLN, setUserLN] = useState<string>("");
+  const [profilePic, setProfilePic] = useState<string>("");
   const [authStatus, setAuthStatus] = useState<boolean>(false);
   const router = useRouter();
   useEffect(() => {
@@ -52,17 +55,30 @@ export const UserContextProvider = ({
             setUserId(user.id);
             setUserFN(user.f_name);
             setUserLN(user.l_name);
+            setProfilePic(user.profilePic)
             setAuthStatus(true);
 
             localStorage.setItem('userId', user.id);
             localStorage.setItem('userFN', user.f_name);
             localStorage.setItem('userLN', user.l_name);
+            localStorage.setItem('profilePic',user.profilePic)
             localStorage.setItem('authStatus', 'true');
           }
           else{
             
-            router.push('/auth/sign-in')
-            toast.error('Not Logged In.')
+            router.push('/')
+            toast.error('You need to login', {
+              style: {
+                border: '1px solid #713200',
+                padding: '6px 10px',
+                backgroundColor: '#d31c60',
+                color:'#FFFFFF'
+              },
+              iconTheme: {
+                primary: '#ffffff',
+                secondary: '#d31c60',
+              },
+            })
           }
         } else {
           toast.error(res.statusText);
@@ -83,6 +99,7 @@ export const UserContextProvider = ({
       setUserId("");
       setUserFN("");
       setUserLN("");
+      setProfilePic("")
       setAuthStatus(false);
     });
   }, [router]);
@@ -94,6 +111,8 @@ export const UserContextProvider = ({
     setUserFN,
     userLN,
     setUserLN,
+    profilePic,
+    setProfilePic,
     authStatus,
     setAuthStatus,
   };

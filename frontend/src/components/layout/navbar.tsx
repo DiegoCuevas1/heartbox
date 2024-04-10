@@ -1,8 +1,6 @@
 'use client';
 import Image from "next/image";
 import Link from "next/link";
-import { GiHamburgerMenu } from "react-icons/gi";
-import ProfilePic from "./profilePic";
 import { useEffect, useRef, useState } from "react";
 import Logout from "../logoutbtn";
 import { useUserContext } from "@/context/AuthContext";
@@ -64,7 +62,7 @@ const NavBar = () =>
                             {authStatus && <Link href={"/home"} onClick={toggleMenu} className="font-loves font-bold text-black text-xl border-b-[1.5px]  border-[#d9a4a4]">Notifications</Link>}
                             {authStatus && <Link href={"/home"} onClick={toggleMenu} className="font-loves font-bold text-black text-xl border-b-[1.5px]  border-[#d9a4a4]">Families</Link>}
                             <Link href={"/home"} onClick={toggleMenu} className="font-loves font-bold text-black text-xl border-b-[1.5px] border-[#d9a4a4]">About Us</Link>
-                            <Link href={"/home"} onClick={toggleMenu} className="font-loves font-bold text-black text-xl border-b-[1.5px] border-[#d9a4a4]">FAQ</Link>
+                            <Link href={"/faq"} onClick={toggleMenu} className="font-loves font-bold text-black text-xl border-b-[1.5px] border-[#d9a4a4]">FAQ</Link>
                             {authStatus && <Link href={"/home"} onClick={toggleMenu} className="font-loves font-bold text-black text-xl border-b-[1.5px] border-[#d9a4a4] ">SETTINGS</Link>}
                         </div>
                         {!authStatus && 

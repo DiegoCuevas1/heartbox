@@ -1,4 +1,4 @@
-'use client'
+'use client';
 import { useEffect } from 'react';
 import { useUserContext } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
@@ -9,13 +9,13 @@ const Landing = () => {
 
   useEffect(() => {
     if (authStatus) {
-      router.push('/families');
+      router.push('/timeline');
     } else {
       router.push('/home');
     }
   }, [authStatus, router]);
 
-  return null; // or any other JSX if needed
+  return null; // No need for any JSX here since the redirection is handled in useEffect
 };
 
 export default Landing;

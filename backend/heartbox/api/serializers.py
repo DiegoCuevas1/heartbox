@@ -8,7 +8,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
         # You can include other fields as needed
 
 class PostSerializer(serializers.ModelSerializer):
-    datePosted = serializers.DateField(format='%m-%d-%Y')
+    datePosted = serializers.DateTimeField(format='%m-%d-%Y %H:%M:%S')
     class Meta:
         model = Post
         fields = ['id', 'user','family','title', 'message', 'datePosted']

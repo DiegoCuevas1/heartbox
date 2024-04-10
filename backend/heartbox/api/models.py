@@ -9,12 +9,13 @@ from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
 
 class UserProfileManager(BaseUserManager):
-    def create_user(self, email, first_name, last_name, birthdate, pin, password=None,):
+    def create_user(self, email, first_name, last_name, birthdate, pin, password=None,profilePicture=None,):
         if not email:
             raise ValueError(_('You must provide an email address'))
-        
+        if profilePicture is None:
+            profilePicture = 'default_profpic.png'
         email = self.normalize_email(email)
-        user = self.model(email=email, last_name=last_name, first_name=first_name, birthdate=birthdate,pin=pin)
+        user = self.model(email=email, last_name=last_name, first_name=first_name, birthdate=birthdate,pin=pin,profilePicture=profilePicture)
         user.set_password(password)
         user.save(using=self._db)
         return user 
@@ -36,6 +37,7 @@ class UserProfile(AbstractBaseUser, PermissionsMixin):
     is_staff = models.BooleanField(_('staff status'), default=False)
     objects = UserProfileManager()
     families = models.ManyToManyField('Family', related_name='family_members',related_query_name="family_member")
+    profilePicture = models.CharField('profile picture', max_length=255, default='default_profpic.png')
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['last_name', 'first_name','birthdate','pin']
@@ -111,7 +113,7 @@ class Post(models.Model):
     family = models.ForeignKey(Family,on_delete=models.CASCADE,null=True)
     message = models.TextField(default="default")
     title = models.CharField(max_length=200)
-    datePosted = models.DateField()
+    datePosted = models.DateTimeField(auto_now_add=True)
 
     objects = PostManager()
     # For video hosting implementation:

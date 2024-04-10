@@ -3,7 +3,7 @@ services:
   web:
     build: .
     volumes:
-      - .:/app
+      - .:/backend/heartbox
     ports:
       - "8000:8000"
     depends_on:
@@ -19,3 +19,8 @@ services:
     image: postgres
     environment:
       POSTGRES_PASSWORD: mypassword
+    volumes:
+      - my_postgres_data:/var/lib/postgresql/data
+
+volumes:
+  my_postgres_data:

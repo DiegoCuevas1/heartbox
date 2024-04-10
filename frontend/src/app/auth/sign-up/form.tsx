@@ -62,28 +62,22 @@ function FormComponent() {
             toast.error("Passwords are not the same. Try Again.");
             return;
           }
-          data.delete("confirm_password");
-          
-          const entriesIterator: IterableIterator<[string, FormDataEntryValue]> = data.entries();
-          for (const [key, value] of entriesIterator) {
-            console.log(`${key}: ${value}`);
+        data.delete("confirm_password");
+        try {
+            const res = await fetch("http://127.0.0.1:8000/api/user/sign-up", {
+              method: "POST",
+              body: data,
+            });
+      
+            const res_msg = await res.text();
+      
+            if (res.ok) {
+              toast.success(sanitize_res_msg(res_msg));
+              router.push("/auth/sign-in");
+            } else toast.error(res_msg);
+          } catch (error) {
+            toast.error((error as Error).toString());
           }
-
-          try {
-              const res = await fetch("http://127.0.0.1:8000/api/user/sign-up", {
-                method: "POST",
-                body: data,
-              });
-        
-              const res_msg = await res.text();
-        
-              if (res.ok) {
-                toast.success(sanitize_res_msg(res_msg));
-                router.push("/auth/sign-in");
-              } else toast.error(res_msg);
-            } catch (error) {
-              toast.error((error as Error).toString());
-            }
     }
   return (
     <div className="text-black px-12 py-6">

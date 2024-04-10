@@ -87,7 +87,8 @@ def check_login(request):
             ret_user = {
                 "id": logged_in_user.id,
                 "f_name": logged_in_user.first_name,
-                "l_name": logged_in_user.last_name
+                "l_name": logged_in_user.last_name,
+                "profilePic": logged_in_user.profilePicture
             }
             return JsonResponse({"data": json.dumps(ret_user), "message": "Logged In"}, status=202)
         except:
@@ -209,8 +210,15 @@ def post(request):
         if post_id:
             if Post.objects.filter(id=post_id).exists():
                 post = Post.objects.get(id=post_id)
-                serializer = PostSerializer(post)
-                return Response(serializer.data, status=200)
+                serializer_data = {
+                    'user_details':{
+                        'id':post.user.id,
+                        'first_name': post.user.first_name,
+                        'last_name': post.user.last_name,
+                    },
+                    'post_details':PostSerializer(post).data
+                }
+                return Response(serializer_data, status=200)
             else:
                 return Response("Post does not exist", status=404)
             
@@ -273,6 +281,7 @@ def post(request):
         
         data= request.data
         data['user'] = request.user.id
+        data['datePosted'] = timezone.now() 
         serializer = PostSerializer(data=data,context={'request':request})      
         
         # serializer = PostSerializer(data=request.data,context={'request':request})
@@ -288,7 +297,7 @@ def post(request):
                 message=request.data['description'],
                 user=UserProfile.objects.get(id=request.user.id),
                 family = Family.objects.get(id=request.data['familyId']),
-                date_posted = request.data['datePosted']
+                date_posted = data['datePosted']
             ) 
             return Response('Your post was successfully created', status=status.HTTP_201_CREATED)
         

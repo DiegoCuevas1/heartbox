@@ -1,6 +1,6 @@
 'use client';
 import { Post } from "@/app/types/post";
-import PostCard from "@/components/layout/postCard"
+import PostCard from "@/components/postCard"
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";

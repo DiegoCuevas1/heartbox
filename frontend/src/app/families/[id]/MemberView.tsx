@@ -5,11 +5,10 @@ import Link from "next/link";
 type MemberListProps =
 {
     members?: User[] | null;
-    signedInUserId?:number;
 }
 
 
-export default function MemberList({members = [],signedInUserId}:MemberListProps){
+export default function MemberList({members = []}:MemberListProps){
     return(
         <div className="flex-col flex space-y-2 ">
             <h2 className="mx-auto text-3xl font-loves font-bold border-b-2 border-[#d31c60]">Members</h2>
