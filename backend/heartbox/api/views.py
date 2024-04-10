@@ -87,7 +87,8 @@ def check_login(request):
             ret_user = {
                 "id": logged_in_user.id,
                 "f_name": logged_in_user.first_name,
-                "l_name": logged_in_user.last_name
+                "l_name": logged_in_user.last_name,
+                "profilePic": logged_in_user.profilePicture
             }
             return JsonResponse({"data": json.dumps(ret_user), "message": "Logged In"}, status=202)
         except:
