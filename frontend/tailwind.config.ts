@@ -8,6 +8,16 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      colors: {
+        // **** OUTDATED COLORS - PHASE THESE OUT ****
+        main: "#FDE9F1",
+        // text: "#1B1C57",
+        border: "#D31C60",
+        default: "#000000",
+      },
+      backgroundColor: {
+        'pink-background': 'var(--color-pink-background)',
+      },
       backgroundImage: {
         'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
         'gradient-conic':

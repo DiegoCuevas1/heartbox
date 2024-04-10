@@ -1,4 +1,5 @@
 'use-client'
+import sanitize_res_msg from "@/utils/utilFunctions";
 import classNames from "classnames";
 import { useRouter } from "next/navigation";
 
@@ -63,10 +64,10 @@ function CreateForm()
               });
             const res_msg = await res.text(); 
             if (res.ok) {
-                toast.success(res_msg);
+                toast.success(sanitize_res_msg(res_msg));
                 
                 router.push("/families");
-              } else toast.error(res_msg);
+              } else toast.error(sanitize_res_msg(res_msg));
             } catch (error) {
               toast.error((error as Error).toString());
         }
@@ -82,11 +83,13 @@ function CreateForm()
                     placeholder="Family Name"
                     className="border-2 border-[#c3366c] py-2 px-2 w-60 rounded-xl italic font-loves font-bold shadow-xl"
                     required
+                    name="family_name"
                 />
                 <label className="font-loves font-bold">Family Description:</label>
                 <textarea
                     placeholder="Family Description"
                     className="border-2 border-[#c3366c] py-2 px-2 w-60 rounded-xl italic font-loves font-bold shadow-xl"
+                    name="family_description"
                 />
                 <div className="h-2"></div>
                 <button className="drop-shadow-lg bg-[#D31c60] rounded w-36 p-2 mx-auto font-loves font-bold text-white hover:scale-125 transition-all active:scale-95">Create Family</button>

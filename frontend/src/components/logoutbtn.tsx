@@ -46,15 +46,15 @@ const Logout = () => {
         >
           <svg
         fill="#ffffff"
-        height="1.5em" // Adjust the size as needed
-        width="1em" // Adjust the size as needed
+        height="1.5em" 
+        width="1em" 
         version="1.1"
         xmlns="http://www.w3.org/2000/svg"
         xmlnsXlink="http://www.w3.org/1999/xlink"
         viewBox="0 0 384.971 384.971"
         xmlSpace="preserve"
       >
-        {/* The rest of your SVG code */}
+       
         <g>
           <g id="Sign_Out">
             <path d="M180.455,360.91H24.061V24.061h156.394c6.641,0,12.03-5.39,12.03-12.03s-5.39-12.03-12.03-12.03H12.03
