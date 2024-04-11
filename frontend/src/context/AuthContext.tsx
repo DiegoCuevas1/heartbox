@@ -64,22 +64,7 @@ export const UserContextProvider = ({
             localStorage.setItem('profilePic',user.profilePic)
             localStorage.setItem('authStatus', 'true');
           }
-          else{
-            
-            router.push('/')
-            toast.error('You need to login', {
-              style: {
-                border: '1px solid #713200',
-                padding: '6px 10px',
-                backgroundColor: '#d31c60',
-                color:'#FFFFFF'
-              },
-              iconTheme: {
-                primary: '#ffffff',
-                secondary: '#d31c60',
-              },
-            })
-          }
+        
         } else {
           toast.error(res.statusText);
          

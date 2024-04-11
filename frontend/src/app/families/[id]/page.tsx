@@ -106,7 +106,7 @@ export default function Page({ params }: { params: { id: string } }) {
                   height={100}
                   alt={`Selected Heartbox Picture`}
                 />
-                <h2 className="shadow-xl ml-2 text-center font-loves text-lg font-bold mx-auto bg-[#fdeff1] py-1  border-2 border-[#bb474d] rounded-xl">
+                <h2 className="shadow-xl px-2 font-loves text-lg font-bold mx-auto bg-[#fdeff1] py-1  border-2 border-[#bb474d] rounded-xl">
                   {data?.family_name}  
                 </h2>
               </div>

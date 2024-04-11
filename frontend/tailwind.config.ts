@@ -9,9 +9,9 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // **** OUTDATED COLORS - PHASE THESE OUT ****
+       
         main: "#FDE9F1",
-        // text: "#1B1C57",
+        links:"#D31C60",
         border: "#D31C60",
         default: "#000000",
       },

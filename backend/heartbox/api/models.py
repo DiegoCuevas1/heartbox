@@ -90,6 +90,7 @@ class Family(models.Model):
     invite_code = models.CharField(max_length=50, unique=True)
     members = models.ManyToManyField(get_user_model(), related_name='user_families')
     posts = models.ManyToManyField('Post', related_name='family_posts', related_query_name='family_post')
+    family_picture = models.CharField('Family Picture', max_length=255, default='default_fampic.png')
     objects = FamilyManager()
 
 class PostManager(models.Manager):

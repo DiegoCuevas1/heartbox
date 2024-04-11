@@ -5,6 +5,8 @@ import { Toaster } from "react-hot-toast";
 import { UserContextProvider } from "@/context/AuthContext";
 import NavBar from '@/components/layout/navbar';
 import BottomNavBar from '@/components/layout/bottom-nav';
+import React from 'react';
+
 
 
 const inter = Inter({ subsets: ['latin'] })
