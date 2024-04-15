@@ -10,7 +10,7 @@ type Post = {
         datePosted:string,
     }
   
-    user_details: any;
+    user_details: User;
     // Add other post details here if needed
 }
 

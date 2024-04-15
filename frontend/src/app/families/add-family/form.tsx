@@ -43,7 +43,14 @@ export default function FormComponent()
     
 function CreateForm() 
 {
+    const [stateFormData,setStateFormData] = useState({familyPic:null})
     const router = useRouter()
+    const handleFileChange = (e: any) => {
+        const file = e.target.files[0];
+        if (file) {
+          setStateFormData({ ...stateFormData, familyPic: file });  // Update profilePic in formData state
+        }
+      };
     const handleSubmit = async (e:FormEvent<HTMLFormElement>) =>
     {
         e.preventDefault();
@@ -51,7 +58,8 @@ function CreateForm()
 
         const data = {
             family_name: formData.get('family_name'),
-            family_description:formData.get('family_description')
+            family_description:formData.get('family_description'),
+            familyPic:stateFormData.familyPic
         };
         try {
             const res = await fetch("http://localhost:8000/api/user/families", {
@@ -90,6 +98,19 @@ function CreateForm()
                     placeholder="Family Description"
                     className="border-2 border-[#c3366c] py-2 px-2 w-60 rounded-xl italic font-loves font-bold shadow-xl"
                     name="family_description"
+                />
+                
+                
+                <label htmlFor="profilePic" className=" font-loves font-bold mb-1">
+                   Family Profile Picture:
+                </label>
+                <input
+                    id="profilePic"
+                    type="file"
+                    accept="image/*"
+                    name="profilePic"
+                    className=""
+                    onChange={handleFileChange}
                 />
                 <div className="h-2"></div>
                 <button className="drop-shadow-lg bg-[#D31c60] rounded w-36 p-2 mx-auto font-loves font-bold text-white hover:scale-125 transition-all active:scale-95">Create Family</button>

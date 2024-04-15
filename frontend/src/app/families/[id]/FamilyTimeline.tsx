@@ -86,7 +86,9 @@ export default function FamilyTimeline({id}:FamilyTimelineProps){
             }
             {posts && Array.isArray(posts) && posts.map((post,index) => (
               <div key={index} className="flex-col mt-2">
-                    <PostCard post={post} />
+                <Link href={`/posts/${post.post_details.id}`} className="space-y-2">
+                  <PostCard post={post} />
+                </Link>
               </div>
                 ))}
 

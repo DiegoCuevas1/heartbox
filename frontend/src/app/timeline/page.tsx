@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Post } from "../types/post";
 import PostCard from "@/components/postCard"
+import Link from "next/link";
 async function getData() {
   try {
     const res = await fetch(`http://localhost:8000/api/user/posts`, {
@@ -45,7 +46,9 @@ export default function Timeline() {
         <div className="flex-col text-default space-y-2 pt-4 h-full">
             {posts && Array.isArray(posts) && posts.map((post,index) => (
               <div key={index} className="flex-col">
+                <Link href={`/posts/${post.post_details.id}`} className="space-y-2">
                     <PostCard post={post} />
+                </Link>
               </div>
             ))}
         </div>

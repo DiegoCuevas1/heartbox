@@ -36,6 +36,7 @@ ALLOWED_HOSTS = ['*']
 
 
 # Application definition
+SITE_ID = 1
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -47,7 +48,21 @@ INSTALLED_APPS = [
     'rest_framework',
     'corsheaders',
     'api.apps.ApiConfig',  
+    'django.contrib.sites',
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+    'allauth.socialaccount.providers.google'
 ]
+
+SOCIALACCOUNT_PROVIDERS={
+    "google":{
+        'SCOPE':[
+            "profile","email"
+        ],
+        'AUTH_PARAMS':{"access_type":"online"}
+    }
+}
 
 LOGIN_REDIRECT_URL = '/'
 
@@ -67,6 +82,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'allauth.account.middleware.AccountMiddleware'
 ]
 
 SESSION_ENGINE = 'django.contrib.sessions.backends.db'
@@ -187,3 +203,11 @@ AWS_S3_ACCESS_KEY_ID= os.getenv('AWS_S3_ACCESS_KEY_ID')
 AWS_S3_SECRET_ACCESS_KEY= os.getenv('AWS_S3_SECRET_ACCESS_KEY')
 AWS_STORAGE_BUCKET_NAME = 'dev-heartbox'
 AWS_S3_REGION_NAME = 'us-east-2'
+
+AUTHENTICATION_BACKENDS = (
+    "django.contrib.auth.backends.ModelBackend",
+    "allauth.account.auth_backends.AuthenticationBackend"
+)
+
+LOGIN_REDIRECT_URL="/"
+LOGOUT_REDIRECT_URL="/"

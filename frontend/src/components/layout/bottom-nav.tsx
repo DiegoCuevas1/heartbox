@@ -21,8 +21,10 @@ const BottomNavBar = () => {
             <Image
               src={`https://dev-heartbox.s3.us-east-2.amazonaws.com/profile_pics/${profilePic}`}
               width={50}
-              height={50}
+              height={100}
               alt="Heartbox Home Page Logo"
+              className="h-12 rounded-full"
+              style={{ objectFit: "cover" }}
             />
           ) : (
             <Image

@@ -1,7 +1,7 @@
 'use client';
 import { Post } from "@/app/types/post";
 import { useEffect, useState } from "react";
-import PostDetails from "./postDetails";
+import PostCard from "@/components/postCard";
 async function getData(postId:string) {
     try {
       const res = await fetch(`http://localhost:8000/api/user/posts?postId=${postId}`, {
@@ -42,7 +42,7 @@ export default function PostPage({ params }: { params: { id: string } })
     return (
     <>
         <div className="flex-col mt-4">
-             {post && <PostDetails post={post} />}
+             {post && <PostCard post={post} />}
         </div>
     </>
     )

@@ -4,7 +4,7 @@ from .models import Family,  UserProfile, Post
 class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserProfile
-        fields = ['id', 'first_name', 'last_name']
+        fields = ['id', 'first_name', 'last_name','profile_picture']
         # You can include other fields as needed
 
 class PostSerializer(serializers.ModelSerializer):
@@ -23,7 +23,7 @@ class FamilySerializer(serializers.ModelSerializer):
     posts = serializers.SerializerMethodField()
     class Meta:
         model = Family
-        fields = ['id', 'family_name', 'family_description', 'invite_code', 'members','posts']
+        fields = ['id', 'family_name', 'family_description', 'invite_code', 'members','posts','family_picture']
         # Include other fields related to the Family model
 
     def get_members(self, obj):

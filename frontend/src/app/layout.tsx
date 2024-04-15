@@ -6,6 +6,7 @@ import { UserContextProvider } from "@/context/AuthContext";
 import NavBar from '@/components/layout/navbar';
 import BottomNavBar from '@/components/layout/bottom-nav';
 import React from 'react';
+import Head from 'next/head';
 
 
 
@@ -23,6 +24,13 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
+      <Head>
+        <title>HeartBox App</title>
+        <meta name="description" content="created by Diego Cuevas, Rob Mantovani, Kyle Mantovani" />
+        {/* Include Google Sign-In JavaScript SDK */}
+        <script src="https://apis.google.com/js/platform.js" async defer></script>
+        {/* Add any other meta tags or link tags here */}
+      </Head>
       <body className={`bg-main ${inter.className}`}>
         <Toaster
         position="top-left"

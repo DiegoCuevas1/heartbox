@@ -1,4 +1,8 @@
 import json
+import os
+import uuid
+import boto3
+from botocore.exceptions import ClientError
 from django.shortcuts import get_object_or_404, render
 from django.utils import timezone
 from django.contrib.auth import authenticate, get_user_model, login, logout
@@ -13,9 +17,12 @@ from rest_framework.decorators import api_view,authentication_classes, permissio
 from rest_framework.response import Response
 from rest_framework import status
 
+from website import settings
+
 from .models import Family, UserProfile, Post
 from .serializers import FamilySerializer, UserProfileSerializer, PostSerializer
 from .utils import is_name_valid
+
 
 @api_view(['POST'])
 def user_login(request):
@@ -46,6 +53,7 @@ def user_signup(request):
         password = data.get('password')
         birthdate = data.get('birthDate')
         pin = data.get('pin')
+        profile_pic = request.FILES.get('profilePic')
         if not is_name_valid(first_name):
             return Response("First name was invalid", status=status.HTTP_400_BAD_REQUEST)
         if not is_name_valid(last_name):
@@ -55,17 +63,49 @@ def user_signup(request):
             validate_email(email)
         except ValidationError as e:
             return Response("Invalid email address. Email did not pass email validation", status=status.HTTP_400_BAD_REQUEST)
-
+        
+       
+        
         db = get_user_model()
         if db.objects.filter(email = email).exists():
             return Response("Email address already exists in the system", status=status.HTTP_409_CONFLICT)
         
+        
+
         try:
             validate_password(password)
         except ValidationError as e:
             return Response("Password did not pass password validation", status=status.HTTP_400_BAD_REQUEST)
 
-        user = db.objects.create_user(email=email, password=password, first_name=first_name, last_name=last_name, birthdate=birthdate,pin=pin)
+
+        
+        if profile_pic:
+            file_extension = os.path.splitext(profile_pic.name)[1]  # Get file extension
+            unique_filename = str(uuid.uuid4()) + file_extension  # Generate unique filename
+
+            try:
+                s3_client = boto3.client('s3',
+                                         aws_access_key_id=settings.AWS_S3_ACCESS_KEY_ID,
+                                         aws_secret_access_key=settings.AWS_S3_SECRET_ACCESS_KEY,
+                                         region_name=settings.AWS_S3_REGION_NAME
+                                         )
+                bucket_name = settings.AWS_STORAGE_BUCKET_NAME
+                folder_name = 'profile_pics'  # Specify the folder name here
+                key = f'{folder_name}/{unique_filename}'  # Concatenate folder name with unique filename
+                s3_client.upload_fileobj(profile_pic, bucket_name, key)
+            except ClientError as e:
+                return Response(str(e), status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        user = db.objects.create_user(
+            email=email,
+            first_name=first_name,
+            last_name=last_name,
+            birthdate=birthdate,
+            pin=pin,
+            password=password,
+            profile_picture=unique_filename if profile_pic else None  # Assign unique filename if profile pic exists
+        )
+        user.save()
         return Response("User signup was successful", status=status.HTTP_200_OK)
 
 @api_view(['DELETE'])
@@ -88,7 +128,7 @@ def check_login(request):
                 "id": logged_in_user.id,
                 "f_name": logged_in_user.first_name,
                 "l_name": logged_in_user.last_name,
-                "profilePic": logged_in_user.profilePicture
+                "profilePic": logged_in_user.profile_picture
             }
             return JsonResponse({"data": json.dumps(ret_user), "message": "Logged In"}, status=202)
         except:
@@ -124,6 +164,23 @@ def family(request):
         return Response(serializer.data, status=200)
     
     if request.method == 'POST':
+        family_pic = request.FILES.get('familyPic')
+        if family_pic:
+            file_extension = os.path.splitext(family_pic.name)[1]  # Get file extension
+            unique_filename = str(uuid.uuid4()) + file_extension  # Generate unique filename
+
+            try:
+                s3_client = boto3.client('s3',
+                                         aws_access_key_id=settings.AWS_S3_ACCESS_KEY_ID,
+                                         aws_secret_access_key=settings.AWS_S3_SECRET_ACCESS_KEY,
+                                         region_name=settings.AWS_S3_REGION_NAME
+                                         )
+                bucket_name = settings.AWS_STORAGE_BUCKET_NAME
+                folder_name = 'family_pics'  # Specify the folder name here
+                key = f'{folder_name}/{unique_filename}'  # Concatenate folder name with unique filename
+                s3_client.upload_fileobj(family_pic, bucket_name, key)
+            except ClientError as e:
+                return Response(str(e), status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         serializer = FamilySerializer(data=request.data, context={'request': request})
         
         if serializer.is_valid():
@@ -131,7 +188,8 @@ def family(request):
             family = Family.objects.create_family(
                 family_name=serializer.validated_data['family_name'],
                 family_description=serializer.validated_data.get('family_description',None),
-                creator=request.user
+                creator=request.user,
+                family_picture=unique_filename if family_pic else None,
             )
 
             # Add the current user to the family members
@@ -215,6 +273,7 @@ def post(request):
                         'id':post.user.id,
                         'first_name': post.user.first_name,
                         'last_name': post.user.last_name,
+                        'profile_picture':post.user.profile_picture,
                     },
                     'post_details':PostSerializer(post).data
                 }
@@ -234,6 +293,7 @@ def post(request):
                             'id': post.user.id,
                             'first_name': post.user.first_name,
                             'last_name': post.user.last_name,
+                            'profile_picture':post.user.profile_picture,
                             # Add other user details as needed
                         }
                         post_data = {
@@ -259,6 +319,7 @@ def post(request):
                 'id': post.user.id,
                 'first_name': post.user.first_name,
                 'last_name': post.user.last_name,
+                'profile_picture':post.user.profile_picture,
                 # Add other user details as needed
             }
             post_data = {

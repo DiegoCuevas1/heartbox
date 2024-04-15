@@ -13,6 +13,7 @@ function FormComponent() {
       confirmPassword:"",
       pin:"",
       birthDate:new Date(),
+      profilePic: null,
     });
 
     const handleInputChange = (e: any) => {
@@ -38,7 +39,13 @@ function FormComponent() {
     const handleNextStep = () => {
       setStep(step + 1);
     };
-  
+    const handleFileChange = (e: any) => {
+      const file = e.target.files[0];
+      if (file) {
+        setFormData({ ...formData, profilePic: file });  // Update profilePic in formData state
+      }
+    };
+    
     const handlePrevStep = () => {
       setStep(step - 1);
     };
@@ -51,8 +58,11 @@ function FormComponent() {
         data.append("confirm_password",formData.confirmPassword)
         data.append("firstName", formData.firstName);
         data.append("lastName", formData.lastName);
-        data.append("birthDate",formData.birthDate.toISOString().slice(0, -14))
-        data.append("pin",formData.pin)
+        data.append("birthDate",formData.birthDate.toISOString().slice(0, -14));
+        data.append("pin",formData.pin);
+        if (formData.profilePic !== null) {
+          data.append("profilePic", formData.profilePic); // Append profilePic only if it's not null
+        }
 
         if (!validate(data.get("email"))) {
             toast.error("Not an Email! Try Again.");
@@ -80,29 +90,29 @@ function FormComponent() {
           }
     }
   return (
-    <div className="text-black px-12 py-6">
+    <div className="text-black py-6">
       
       <form className="flex flex-col items-center justify-center mx-auto max-w-md" onSubmit={handleSubmit}>
             {step === 1 && ( <>
               <h2 className="pb-6 flex font-loves font-bold text-3xl justify-center items-center text-center">
-        <span className="border-b-2 border-[#D31c60]">Sign Up</span>
-      </h2><div className="flex flex-col mb-4">
-              
-              <label htmlFor="email" className="font-loves font-bold mb-1">
-                Email<span className="text-red-500">*</span>:
-              </label>
-              <input
-                id="email"
-                type="text"
-                name="email"
-                className="border-2 p-1 border-gray-400 rounded-md"
-                required
-                value={formData.email}
-                maxLength={50}
-                placeholder="Email"
-                onChange={handleInputChange}
-              />
-            </div>
+                <span className="border-b-2 border-[#D31c60]">Sign Up</span>
+              </h2>
+              <div className="flex flex-col mb-4">
+                <label htmlFor="email" className="font-loves font-bold mb-1">
+                  Email<span className="text-red-500">*</span>:
+                </label>
+                <input
+                  id="email"
+                  type="text"
+                  name="email"
+                  className="border-2 p-1 border-gray-400 rounded-md"
+                  required
+                  value={formData.email}
+                  maxLength={50}
+                  placeholder="Email"
+                  onChange={handleInputChange}
+                />
+              </div>
             <div className="flex flex-col mb-4">
               <label htmlFor="password" className=" font-loves font-bold mb-1">
                 Password<span className="text-red-500">*</span>:
@@ -189,6 +199,19 @@ function FormComponent() {
                 placeholder="mm/dd/yyyy"
                 onChange={handleInputChange}
                 value={formData.birthDate.toISOString().slice(0, -14)}
+              />
+            </div>
+            <div className="ml-32 mb-2 flex-col">
+              <label htmlFor="profilePic" className=" font-loves font-bold mb-1">
+                Profile Picture:
+              </label>
+              <input
+                id="profilePic"
+                type="file"
+                accept="image/*"
+                name="profilePic"
+                className=""
+                onChange={handleFileChange}
               />
             </div>
             <div className="flex flex-col mb-4">
