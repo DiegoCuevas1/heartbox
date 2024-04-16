@@ -19,7 +19,7 @@ from rest_framework import status
 
 from website import settings
 
-from .models import Family, UserProfile, Post
+from .models import Family, Notification, UserProfile, Post
 from .serializers import FamilySerializer, UserProfileSerializer, PostSerializer
 from .utils import is_name_valid
 
@@ -37,7 +37,7 @@ def user_login(request):
             request.session['email'] = email
             return Response("Login!", status=status.HTTP_202_ACCEPTED)
         else:
-            return Response("Failed LOGIN! Check email or password for error.", status=status.HTTP_401_UNAUTHORIZED)
+            return Response("Email or password incorrect. Try again.", status=status.HTTP_401_UNAUTHORIZED)
         
 
         
@@ -214,7 +214,13 @@ def join_family(request):
                 return Response('Already in that Family',status=400)
             user.add_to_family(family)
             family.members.add(user)
-
+            
+            for member in family.members.exclude(pk=user.pk):
+                    Notification.objects.create_notif(
+                        message=f'{user.first_name} has joined the group "{family.family_name}".',
+                        notification_type='GROUP_JOIN',
+                        recipient=member
+                    )
             # other_members = family.members.exclude(pk=user.pk)
             # message = f"{user.first_name} {user.last_name} joined the {family.family_name} family."
             # timestamp = timezone.now()

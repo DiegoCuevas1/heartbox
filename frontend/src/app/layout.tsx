@@ -27,14 +27,29 @@ export default function RootLayout({
       <Head>
         <title>HeartBox App</title>
         <meta name="description" content="created by Diego Cuevas, Rob Mantovani, Kyle Mantovani" />
-        {/* Include Google Sign-In JavaScript SDK */}
-        <script src="https://apis.google.com/js/platform.js" async defer></script>
-        {/* Add any other meta tags or link tags here */}
       </Head>
       <body className={`bg-main ${inter.className}`}>
         <Toaster
         position="top-left"
         reverseOrder={false}
+        toastOptions={{
+          style: {
+            background: '#d31c60',
+            color:'white'
+          },
+          success: {
+            iconTheme: {
+              primary: 'white',
+              secondary: '#D31c60',
+            },
+          },
+          error:{
+            iconTheme:{
+              primary:'white',
+              secondary:'#D31C60'
+            }
+          }
+        }}
          />
         <UserContextProvider>
           <NavBar />

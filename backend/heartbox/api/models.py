@@ -128,20 +128,28 @@ class Post(models.Model):
     # For video hosting implementation:
     # video = models.CharField(max_length=500)
 
-# class NotificationManager(models.Manager):
-#     def create_notif(self, message, notification_type, timestamp=None):
-#         notif = self.create(
-#             message=message,
-#             notification_type=notification_type,
-#             timestamp=timestamp or timezone.now()
-#         )
-#         notif.save()
-#         return notif
+class NotificationManager(models.Manager):
+    def create_notif(self, message, notification_type, recipient,timestamp=None):
+        if timestamp is None:
+            timestamp = timezone.now()
+        return self.create(message=message, notification_type=notification_type, recipient=recipient, timestamp=timestamp)
 
-# class Notification(models.Model):
-#     id = models.AutoField(primary_key=True)
-#     message = models.CharField(max_length=300)
-#     notification_type = models.CharField(max_length=50)
-#     timestamp = models.DateTimeField(default=timezone.now)
+class Notification(models.Model):
+    NOTIFICATION_TYPES = (
+            ('GROUP_JOIN', 'Group Join'),
+            ('POST_MENTION', 'Post Mention'),
+            ('GROUP_INVITATION', 'Group Invitation'),
+            # Add more notification types as needed
+        )
+    id = models.AutoField(primary_key=True)
+    message = models.CharField(max_length=300)
+    notification_type = models.CharField(max_length=50)
+    timestamp = models.DateTimeField(default=timezone.now)
+    recipient = models.ForeignKey(get_user_model(),related_name='notifications',on_delete=models.CASCADE)
+    class Meta:
+        ordering = ['-timestamp']
 
-#     objects=NotificationManager()
+    def __str__(self):
+        return f'{self.notification_type} Notification'
+    
+    objects=NotificationManager()

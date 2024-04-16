@@ -5,6 +5,7 @@ import toast from "react-hot-toast";
 import { navSignIn } from "@/utils/NavAuthToggle";
 import sanitize_res_msg from "@/utils/utilFunctions";
 
+
 function FormComponent() {
     const validate = (email: any) =>
         /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,4}$/i.test(email);
@@ -34,9 +35,9 @@ function FormComponent() {
                 toast.success(sanitize_res_msg(res_msg));
                 navSignIn();
                 router.push("/families");
-              } else toast.error(res_msg);
+              } else toast.error(sanitize_res_msg(res_msg));
             } catch (error) {
-              toast.error((error as Error).toString());
+              toast.error(sanitize_res_msg((error as Error).toString()));
         }
     }
 
