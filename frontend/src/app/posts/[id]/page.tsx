@@ -41,7 +41,7 @@ export default function PostPage({ params }: { params: { id: string } })
     },[postId])
     return (
     <>
-        <div className="flex-col mt-4">
+        <div className="flex-col mt-2">
              {post && <PostCard post={post} />}
         </div>
     </>

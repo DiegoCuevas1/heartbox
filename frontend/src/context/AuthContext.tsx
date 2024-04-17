@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { setSignIn, setSignOut } from "@/utils/NavAuthToggle";
 import toast from "react-hot-toast";
-import { useRouter } from "next/navigation";
+
 
 
 type UserProviderType = {
@@ -38,7 +38,7 @@ export const UserContextProvider = ({
   const [userLN, setUserLN] = useState<string>("");
   const [profilePic, setProfilePic] = useState<string>("");
   const [authStatus, setAuthStatus] = useState<boolean>(false);
-  const router = useRouter();
+
   useEffect(() => {
     const checkLogin = async () => {
       try {
@@ -87,7 +87,7 @@ export const UserContextProvider = ({
       setProfilePic("")
       setAuthStatus(false);
     });
-  }, [router]);
+  }, []);
   
   const providerVal: UserProviderType = {
     userId,

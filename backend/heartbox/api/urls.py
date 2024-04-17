@@ -13,4 +13,5 @@ urlpatterns = [
     path('user/posts',views.post,name="post"),
     path('user/posts/<int:familyId>/',views.post,name="posts"),
     path("user/posts/<int:postId>/", views.post, name="posts"),
+    path('user/notifications',views.notification,name='notifications')
 ]

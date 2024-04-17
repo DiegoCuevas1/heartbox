@@ -75,7 +75,7 @@ export default function FormComponent()
             id: -1,
             family_name: '',
             family_description: '',
-            inviteCode: '',
+            invite_code: '',
             members: [],
         }
     );

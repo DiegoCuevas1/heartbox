@@ -8,12 +8,7 @@ export default function Login() {
   const { authStatus } = useUserContext();
   const router = useRouter();
   if (authStatus) {
-    router.push('/families');
-    return (
-      <div>
-        <p>You are already logged in. Redirecting...</p>
-      </div>
-    );
+    window.location.href = '/families';
   }
   return (
     <div className="flex-col h-screen bg-[#fde9f1]">

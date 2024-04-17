@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Post } from "../types/post";
 import PostCard from "@/components/postCard"
 import Link from "next/link";
+import Image from "next/image";
 async function getData() {
   try {
     const res = await fetch(`http://localhost:8000/api/user/posts`, {
@@ -43,20 +44,23 @@ export default function Timeline() {
   ,[])
     return (
       <>
-        <div className="flex-col text-default space-y-2 pt-4 h-full">
+        <div className="flex-col text-default space-y-2 h-full">
             {posts && Array.isArray(posts) && posts.map((post,index) => (
-              <div key={index} className="flex-col">
+              <div key={index} className="flex-col mt-2">
                 <Link href={`/posts/${post.post_details.id}`} className="space-y-2">
                     <PostCard post={post} />
                 </Link>
               </div>
             ))}
-        </div>
-        {posts && posts?.length===0 && 
-              <div className="flex-col ">
-                
+            {posts && posts?.length===0 && 
+              <div className="flex-col flex items-center justify-center mt-24">
+                <Image src={"/images/family_heartbox.png"} alt={""} width={150} height={100}></Image>
+                <p className="text-3xl font-loves font-bold border-b-2 mt-4 border-border">Nothing to see here yet...</p>
+                <p className="text-2xl font-loves font-bold mt-2 text-center"><Link className="text-links hover:underline" href={"/families/add-family"}>Join a Family</Link> to fill up your timeline!</p>
               </div>
-        }
+            }
+        </div>
+        
      </>
     )
   }

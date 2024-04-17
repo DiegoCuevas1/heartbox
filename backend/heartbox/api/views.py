@@ -20,7 +20,7 @@ from rest_framework import status
 from website import settings
 
 from .models import Family, Notification, UserProfile, Post
-from .serializers import FamilySerializer, UserProfileSerializer, PostSerializer
+from .serializers import FamilySerializer, NotificationSerializer, UserProfileSerializer, PostSerializer
 from .utils import is_name_valid
 
 
@@ -370,4 +370,22 @@ def post(request):
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
+    return Response('Invalid Method Request', status=status.HTTP_403_FORBIDDEN)
+
+@api_view(['GET'])
+@authentication_classes([SessionAuthentication, BasicAuthentication])
+@permission_classes([IsAuthenticated])
+def notification(request):
+    if request.method == 'GET':
+        notification_id = request.GET.get('notificationId')
+        if notification_id:
+            if Notification.objects.filter(id=notification_id).exists():
+                notification = Notification.objects.get(id=notification_id)
+                serializer_data = NotificationSerializer(notification)
+                return Response(serializer_data, status=200)
+            else:
+                return Response("Post does not exist", status=404)
+        notifications = Notification.objects.filter(recipient_id=request.user.id)
+        serializer = NotificationSerializer(notifications, many=True)
+        return Response(serializer.data,status=status.HTTP_200_OK)
     return Response('Invalid Method Request', status=status.HTTP_403_FORBIDDEN)

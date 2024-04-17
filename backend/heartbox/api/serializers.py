@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Family,  UserProfile, Post
+from .models import Family, Notification,  UserProfile, Post
 
 class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:
@@ -60,7 +60,7 @@ class FamilySerializer(serializers.ModelSerializer):
 
         return None
     
-# class NotificationSerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = Notification
-#         fields = ['id','user_id','message','notification_type']
+class NotificationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Notification
+        fields = ['id', 'message', 'notification_type', 'timestamp', 'recipient']

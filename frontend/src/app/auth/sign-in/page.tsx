@@ -3,15 +3,24 @@ import Link from "next/link";
 import FormComponent from "./form";
 import { useUserContext } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import toast from "react-hot-toast";
 export default function Login() {
   const { authStatus } = useUserContext();
+  const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
-  useEffect(() => {
-    if (authStatus) {
-      router.push('/families');
-    }
-  }, [authStatus, router]);
+
+    // Delay the authentication status check until after the component mounts
+    useEffect(() => {
+      setIsLoading(false); // Mark loading as complete
+    }, []);
+  
+    // Redirect if user is already authenticated
+    useEffect(() => {
+      if (!isLoading && authStatus) {
+        window.location.href = '/families';
+      }
+    }, [isLoading, authStatus, router]);
 
   return (
     <div className="flex-col h-[45rem] bg-[#fde9f1]">
