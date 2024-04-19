@@ -1,9 +1,11 @@
+import { Family } from "./family";
 import { User } from "./user";
 
-interface NotificationType {
+type NotificationType = {
     id: number;
-    content: string;
+    message: string;
     notification_type: string;
-    user_details: User;
+    sender_details: User;
+    family_details: Family;
   }
   export type { NotificationType };

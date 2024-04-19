@@ -20,10 +20,9 @@ class PostSerializer(serializers.ModelSerializer):
 class FamilySerializer(serializers.ModelSerializer):
     invite_code = serializers.SerializerMethodField()
     members = serializers.SerializerMethodField()
-    posts = serializers.SerializerMethodField()
     class Meta:
         model = Family
-        fields = ['id', 'family_name', 'family_description', 'invite_code', 'members','posts','family_picture']
+        fields = ['id', 'family_name', 'family_description', 'invite_code', 'members','family_picture']
         # Include other fields related to the Family model
 
     def get_members(self, obj):
@@ -63,4 +62,4 @@ class FamilySerializer(serializers.ModelSerializer):
 class NotificationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Notification
-        fields = ['id', 'message', 'notification_type', 'timestamp', 'recipient']
+        fields = ['id', 'notification_type', 'timestamp','sender', 'recipient','family_joined','post_mentioned']

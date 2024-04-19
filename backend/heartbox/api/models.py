@@ -129,10 +129,49 @@ class Post(models.Model):
     # video = models.CharField(max_length=500)
 
 class NotificationManager(models.Manager):
-    def create_notif(self, message, notification_type, recipient,timestamp=None):
+    def create_notif(self,notification_type, sender, recipient, post_mentioned=None, family_joined=None,timestamp=None):
         if timestamp is None:
             timestamp = timezone.now()
-        return self.create(message=message, notification_type=notification_type, recipient=recipient, timestamp=timestamp)
+        return self.create(notification_type=notification_type, sender=sender,recipient=recipient,post_mentioned=post_mentioned, family_joined=family_joined, timestamp=timestamp)
+    def create_group_join_notification(self, sender, recipient, family_joined):
+        notification_type = 'GROUP_JOIN'
+        timestamp = timezone.now()  # Current timestamp
+
+        # Call create_notif method to create the notification
+        return Notification.objects.create_notif(
+            notification_type=notification_type,
+            sender=sender,
+            recipient=recipient,
+            family_joined=family_joined,
+            timestamp=timestamp
+        )
+
+    # Example usage to create a post mention notification
+    def create_post_mention_notification(self, sender, recipient, post_mentioned):
+        notification_type = 'POST_MENTION'
+        timestamp = timezone.now()  # Current timestamp
+
+        # Call create_notif method to create the notification
+        Notification.objects.create_notif(
+            notification_type=notification_type,
+            sender=sender,
+            recipient=recipient,
+            post_mentioned=post_mentioned,
+            timestamp=timestamp
+        )
+
+# Example usage to create a group invitation notification
+    def create_group_invitation_notification(self, sender, recipient):
+        notification_type = 'GROUP_INVITATION'
+        timestamp = timezone.now()  # Current timestamp
+
+        # Call create_notif method to create the notification
+        Notification.objects.create_notif(
+            notification_type=notification_type,
+            sender=sender,
+            recipient=recipient,
+            timestamp=timestamp
+        )
 
 class Notification(models.Model):
     NOTIFICATION_TYPES = (
@@ -142,10 +181,12 @@ class Notification(models.Model):
             # Add more notification types as needed
         )
     id = models.AutoField(primary_key=True)
-    message = models.CharField(max_length=300)
     notification_type = models.CharField(max_length=50)
     timestamp = models.DateTimeField(default=timezone.now)
-    recipient = models.ForeignKey(get_user_model(),related_name='notifications',on_delete=models.CASCADE)
+    sender = models.ForeignKey(get_user_model(),related_name='sent_notifications', on_delete=models.CASCADE)
+    recipient = models.ForeignKey(get_user_model(),related_name='received_notifications',on_delete=models.CASCADE)
+    family_joined = models.ForeignKey('Family', related_name='family_notifications', on_delete=models.CASCADE, null=True, blank=True)
+    post_mentioned = models.ForeignKey('Post', related_name='post_notifications',on_delete=models.CASCADE,null=True,blank=True)
     class Meta:
         ordering = ['-timestamp']
 

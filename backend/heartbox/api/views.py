@@ -138,11 +138,6 @@ def check_login(request):
 @authentication_classes([SessionAuthentication, BasicAuthentication])
 @permission_classes([IsAuthenticated])
 def family(request):
-    if not request.user.is_authenticated:
-        # User is not authenticated, create a custom response indicating the need to log in
-        response_data = {'message': 'You need to log in to access this endpoint.'}
-        return Response(response_data, status=401)
-    
     if request.method == 'GET':
         family_id = request.GET.get('familyId')
         if family_id:
@@ -157,17 +152,17 @@ def family(request):
             except ValueError:
                 return Response("Invalid familyId format", status=400)
         else:
-            # If familyId is not provided, get all families for the user
             user_families = request.user.families.all()
 
         serializer = FamilySerializer(user_families, many=True, context={'request': request})
+        
         return Response(serializer.data, status=200)
     
     if request.method == 'POST':
         family_pic = request.FILES.get('familyPic')
         if family_pic:
-            file_extension = os.path.splitext(family_pic.name)[1]  # Get file extension
-            unique_filename = str(uuid.uuid4()) + file_extension  # Generate unique filename
+            file_extension = os.path.splitext(family_pic.name)[1] 
+            unique_filename = str(uuid.uuid4()) + file_extension  
 
             try:
                 s3_client = boto3.client('s3',
@@ -216,23 +211,11 @@ def join_family(request):
             family.members.add(user)
             
             for member in family.members.exclude(pk=user.pk):
-                    Notification.objects.create_notif(
-                        message=f'{user.first_name} has joined the group "{family.family_name}".',
-                        notification_type='GROUP_JOIN',
-                        recipient=member
+                    Notification.objects.create_group_join_notification(
+                        sender=user,
+                        recipient=member,
+                        family_joined=family
                     )
-            # other_members = family.members.exclude(pk=user.pk)
-            # message = f"{user.first_name} {user.last_name} joined the {family.family_name} family."
-            # timestamp = timezone.now()
-            # # notification = Notification.objects.create_notif(
-            # #         message=message,
-            # #         notification_type='join_family',
-            # #         timestamp=timestamp
-            # #     )
-            # # for member in other_members:
-            # #     member.notifications.add(notification)
-
-
             return Response('Successfully joined the family!',status=200)
 
         return Response('Invalid invite code.',status=400)
@@ -281,7 +264,12 @@ def post(request):
                         'last_name': post.user.last_name,
                         'profile_picture':post.user.profile_picture,
                     },
-                    'post_details':PostSerializer(post).data
+                    'id': PostSerializer(post).data['id'],
+                    'title':PostSerializer(post).data['title'],
+                    'user':PostSerializer(post).data['user'],
+                    'message':PostSerializer(post).data['message'],
+                    'family':PostSerializer(post).data['family'],
+                    'datePosted':PostSerializer(post).data['datePosted'],
                 }
                 return Response(serializer_data, status=200)
             else:
@@ -303,7 +291,12 @@ def post(request):
                             # Add other user details as needed
                         }
                         post_data = {
-                            'post_details': PostSerializer(post).data,
+                            'id': PostSerializer(post).data['id'],
+                            'title':PostSerializer(post).data['title'],
+                            'user':PostSerializer(post).data['user'],
+                            'message':PostSerializer(post).data['message'],
+                            'family':PostSerializer(post).data['family'],
+                            'datePosted':PostSerializer(post).data['datePosted'],
                             'user_details': user_details
                         }
                         serialized_posts.append(post_data)
@@ -329,7 +322,12 @@ def post(request):
                 # Add other user details as needed
             }
             post_data = {
-                'post_details': PostSerializer(post).data,
+                'id': PostSerializer(post).data['id'],
+                'title':PostSerializer(post).data['title'],
+                'user':PostSerializer(post).data['user'],
+                'message':PostSerializer(post).data['message'],
+                'family':PostSerializer(post).data['family'],
+                'datePosted':PostSerializer(post).data['datePosted'],
                 'user_details': user_details
             }
             serialized_posts.append(post_data)
@@ -375,17 +373,72 @@ def post(request):
 @api_view(['GET'])
 @authentication_classes([SessionAuthentication, BasicAuthentication])
 @permission_classes([IsAuthenticated])
-def notification(request):
+def notification(request):  # Accept the notificationId as a parameter
     if request.method == 'GET':
-        notification_id = request.GET.get('notificationId')
-        if notification_id:
-            if Notification.objects.filter(id=notification_id).exists():
-                notification = Notification.objects.get(id=notification_id)
-                serializer_data = NotificationSerializer(notification)
-                return Response(serializer_data, status=200)
-            else:
-                return Response("Post does not exist", status=404)
+        notificationId = request.GET.get('notificationId')
+        if notificationId:  # Check if notificationId is provided
+            try:
+                notification = Notification.objects.get(id=notificationId)
+                serializer = NotificationSerializer(notification)
+                family_details = {
+                    'id':serializer.data['family'].id
+                }
+                print(family_details)
+                user_details = {
+                    'id': notification.sender.id,
+                    'first_name': notification.sender.first_name,
+                    'last_name': notification.sender.last_name,
+                    'profile_picture': notification.sender.profile_picture,  
+                }
+                notification_details = {
+                    'sender_details': user_details,
+                    'id': serializer.data['id'],
+                    'notification_type': serializer.data['notification_type'],
+                    'timestamp': serializer.data['timestamp'],
+                    'family_joined':serializer.data['family_joined']
+                }
+                return Response(notification_details, status=status.HTTP_200_OK)
+            except Notification.DoesNotExist:
+                return Response({'error': 'Notification not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        # If notificationId is not provided, retrieve all notifications for the user
         notifications = Notification.objects.filter(recipient_id=request.user.id)
-        serializer = NotificationSerializer(notifications, many=True)
-        return Response(serializer.data,status=status.HTTP_200_OK)
+        serialized_notifications = []
+        for notification in notifications:
+            serializer = NotificationSerializer(notification)
+            family_details=None
+            if serializer.data['family_joined']:
+                family = Family.objects.get(id=serializer.data['family_joined'])
+                family_details={
+                    'id':family.id,
+                    'family_name':family.family_name,
+                    'family_picture':family.family_picture
+                }
+            sender_details = {
+                'id': notification.sender.id,
+                'first_name': notification.sender.first_name,
+                'last_name': notification.sender.last_name,
+                'profile_picture': notification.sender.profile_picture,  
+            }
+            notification_details = {
+                'id': serializer.data['id'],
+                'notification_type': serializer.data['notification_type'],
+                'timestamp': serializer.data['timestamp'],
+                'sender_details': sender_details,
+                'family_details':family_details
+            }
+            serialized_notifications.append(notification_details)
+
+        return Response(serialized_notifications, status=status.HTTP_200_OK)
+
+    return Response({'error': 'Invalid Method Request'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+@api_view(['GET'])
+@authentication_classes([SessionAuthentication, BasicAuthentication])
+@permission_classes([IsAuthenticated])
+def notification_count(request):
+    if request.method == 'GET':
+        # Retrieve the count of notifications for the current user
+        notification_count = Notification.objects.filter(recipient_id=request.user.id).count()
+        return Response({'count': notification_count}, status=status.HTTP_200_OK)
     return Response('Invalid Method Request', status=status.HTTP_403_FORBIDDEN)

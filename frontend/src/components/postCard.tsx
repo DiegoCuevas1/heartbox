@@ -4,7 +4,7 @@ import Link from "next/link";
 
 export default function PostCard({post}:{post:Post})
 {
-    const postDate = new Date(post.post_details.datePosted);
+    const postDate = new Date(post.datePosted);
     const formattedDate = `${postDate.getMonth() + 1}-${postDate.getDate()}-${postDate.getFullYear()}`;
 
     return(
@@ -27,10 +27,10 @@ export default function PostCard({post}:{post:Post})
                         </div>
                         
                     </div>
-                    <p className="mt-2 font-bold">{post.post_details.title}</p>
+                    <p className="mt-2 font-bold">{post.title}</p>
                 </div>
             </div>
-            <p className="mx-4 mt-4 bg-[#fdeff1] flex border-2 border-[#d31c60] p-2 rounded-xl">{post.post_details.message}</p> 
+            <p className="mx-4 mt-4 bg-[#fdeff1] flex border-2 border-[#d31c60] p-2 rounded-xl">{post.message}</p> 
             <div className="h-[1px] bg-[#fbd3d3] mt-2 "/>
         </div>
     )
