@@ -51,16 +51,17 @@ export default function MemberList({members = [],invite_code}:MemberListProps){
                 <h2 className="mx-auto text-3xl font-loves font-bold border-b-2 border-[#d31c60]">Members</h2>
                 
                 <div className="flex bg-[#f3d8e6] flex-col border-2 border-[#d31c60] rounded-xl overflow-auto max-h-[calc(40vh-80px)] mr-4">
-                    {members && members.length<1 && <p className="p-2">No other group members...</p>}
+                    {members && members.length<1 && <p className="py-2 px-4">No other group members...</p>}
                     {members && members.length>=1 &&members.map((member,index) => (
                         <div key={member.id} className="flex flex-col">
                             <div className="flex gap-2 items-center py-2 px-4 justify-center">
                                 <Image
                                     src={`https://dev-heartbox.s3.us-east-2.amazonaws.com/profile_pics/${member.profile_picture}`}
-                                    width={40}
+                                    width={50}
                                     height={100}
-                                    className="justify-center items-center"
-                                    alt=""
+                                    className="h-12 rounded-full"
+                                    style={{ objectFit: "cover" }}
+                                    alt={`${member.first_name} ${member.last_name}'s profile picture`}
                                 />
                                 <p className="flex justify-center items-center ">
                                     {member?.first_name} {member?.last_name}

@@ -1,3 +1,4 @@
+import { Family } from "./family";
 import { User } from "./user";
 
 type Post = {
@@ -6,11 +7,11 @@ type Post = {
     title:string,
     user:number,
     message:string,
-    family:number,
+    family_details:Family,
     datePosted:string,
     
   
-    user_details: User;
+    user_details: User,
     // Add other post details here if needed
 }
 

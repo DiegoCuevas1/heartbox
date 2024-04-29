@@ -2,13 +2,10 @@
 import { useEffect, useState } from "react";
 import Card from "./card";
 import toast from "react-hot-toast";
+import { Family } from "../types";
 
 
-type Family = {
-  id:string,
-  family_name:string,
-  family_description:string,
-}
+
 
 async function getData() {
     try {

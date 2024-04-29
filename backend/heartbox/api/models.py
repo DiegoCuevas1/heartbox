@@ -35,6 +35,7 @@ class UserProfile(AbstractBaseUser, PermissionsMixin):
     pin = models.CharField(_('PIN'), max_length=100)
     profile_picture = models.CharField('profile picture', max_length=255, default='default_profpic.png')
     posts = models.ManyToManyField('Post', related_name='user_posts', related_query_name='user_post')
+    liked = models.ManyToManyField('Post', related_name='liked_by', blank=True)
     is_staff = models.BooleanField(_('staff status'), default=False)
     objects = UserProfileManager()
     families = models.ManyToManyField('Family', related_name='family_members',related_query_name="family_member")
@@ -112,7 +113,12 @@ class PostManager(models.Manager):
         )
         post.save()
         return post
-    
+    def like_post(self, post, user):
+        post.likes.add(user)
+
+    def unlike_post(self, post, user):
+        post.likes.remove(user)
+
     def get_posts_in_family(self, family):
         return self.filter(family=family)
 
@@ -123,6 +129,7 @@ class Post(models.Model):
     message = models.TextField(default="default")
     title = models.CharField(max_length=200)
     datePosted = models.DateTimeField(auto_now_add=True)
+    likes = models.ManyToManyField(get_user_model(), related_name='liked_posts', blank=True)
 
     objects = PostManager()
     # For video hosting implementation:

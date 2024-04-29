@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Post } from "../types/post";
-import PostCard from "@/components/postCard"
+import TimelinePostCard from "./timelineCard";
 import Link from "next/link";
 import Image from "next/image";
 async function getData() {
@@ -47,9 +47,8 @@ export default function Timeline() {
         <div className="flex-col text-default space-y-2 h-full">
             {posts && Array.isArray(posts) && posts.map((post,index) => (
               <div key={index} className="flex-col mt-2">
-                <Link href={`/posts/${post.id}`} className="space-y-2">
-                    <PostCard post={post} />
-                </Link>
+                <TimelinePostCard post={post} />
+                <div className="h-[1px] mt-2 bg-[#d31c60]"/>
               </div>
             ))}
             {posts && posts?.length===0 && 

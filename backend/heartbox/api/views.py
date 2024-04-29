@@ -159,11 +159,12 @@ def family(request):
         return Response(serializer.data, status=200)
     
     if request.method == 'POST':
-        family_pic = request.FILES.get('familyPic')
+        family_pic = request.FILES.get('family_picture')
+        
         if family_pic:
             file_extension = os.path.splitext(family_pic.name)[1] 
             unique_filename = str(uuid.uuid4()) + file_extension  
-
+           
             try:
                 s3_client = boto3.client('s3',
                                          aws_access_key_id=settings.AWS_S3_ACCESS_KEY_ID,
@@ -176,24 +177,20 @@ def family(request):
                 s3_client.upload_fileobj(family_pic, bucket_name, key)
             except ClientError as e:
                 return Response(str(e), status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        serializer = FamilySerializer(data=request.data, context={'request': request})
-        
-        if serializer.is_valid():
-            # Use the custom manager to create the family
-            family = Family.objects.create_family(
-                family_name=serializer.validated_data['family_name'],
-                family_description=serializer.validated_data.get('family_description',None),
-                creator=request.user,
-                family_picture=unique_filename if family_pic else None,
-            )
-
-            # Add the current user to the family members
-            request.user.add_to_family(family)
-            family.members.add(request.user)
             
-            return Response(family.family_name + ' was created successfully.', status=201)
+        family = Family.objects.create_family(
+            family_name=request.data['family_name'],
+            family_description=request.data['family_description'],
+            creator = request.user,
+            family_picture= unique_filename if family_pic else None
+        )
+        # Add the current user to the family members
+        request.user.add_to_family(family)
+        family.members.add(request.user)
+            
+        return Response(family.family_name + ' was created successfully.', status=201)
 
-        return Response(serializer.errors, status=400)
+    return Response(serializer.errors, status=400)
 
 
 @api_view(['POST'])
@@ -257,6 +254,14 @@ def post(request):
         if post_id:
             if Post.objects.filter(id=post_id).exists():
                 post = Post.objects.get(id=post_id)
+                post_serialized = PostSerializer(post)
+                family = Family.objects.get(id=post_serialized.data['family'])
+                serialized_family = FamilySerializer(family,context={'request': request})
+                family_details = {
+                    'id':serialized_family.data['id'],
+                    'family_name':serialized_family.data['family_name'],
+                    'family_description':serialized_family.data['family_description'],
+                }
                 serializer_data = {
                     'user_details':{
                         'id':post.user.id,
@@ -264,12 +269,12 @@ def post(request):
                         'last_name': post.user.last_name,
                         'profile_picture':post.user.profile_picture,
                     },
-                    'id': PostSerializer(post).data['id'],
-                    'title':PostSerializer(post).data['title'],
-                    'user':PostSerializer(post).data['user'],
-                    'message':PostSerializer(post).data['message'],
-                    'family':PostSerializer(post).data['family'],
-                    'datePosted':PostSerializer(post).data['datePosted'],
+                    'id': post_serialized.data['id'],
+                    'title': post_serialized.data['title'],
+                    'user': post_serialized.data['user'],
+                    'message': post_serialized.data['message'],
+                    'datePosted': post_serialized.data['datePosted'],
+                    'family_details':family_details,
                 }
                 return Response(serializer_data, status=200)
             else:
@@ -283,6 +288,9 @@ def post(request):
                     # Serialize posts along with user details
                     serialized_posts = []
                     for post in posts:
+                        post_serialized = PostSerializer(post)
+                        family = Family.objects.get(id=post_serialized.data['family'])
+                        serialized_family = FamilySerializer(family,context={'request': request})
                         user_details = {
                             'id': post.user.id,
                             'first_name': post.user.first_name,
@@ -290,13 +298,18 @@ def post(request):
                             'profile_picture':post.user.profile_picture,
                             # Add other user details as needed
                         }
+                        family_details = {
+                            'id':serialized_family.data['id'],
+                            'family_name':serialized_family.data['family_name'],
+                            'family_description':serialized_family.data['family_description'],
+                        }
                         post_data = {
-                            'id': PostSerializer(post).data['id'],
-                            'title':PostSerializer(post).data['title'],
-                            'user':PostSerializer(post).data['user'],
-                            'message':PostSerializer(post).data['message'],
-                            'family':PostSerializer(post).data['family'],
-                            'datePosted':PostSerializer(post).data['datePosted'],
+                            'id': post_serialized.data['id'],
+                            'title': post_serialized.data['title'],
+                            'user': post_serialized.data['user'],
+                            'message': post_serialized.data['message'],
+                            'datePosted': post_serialized.data['datePosted'],
+                            'family_details':family_details,
                             'user_details': user_details
                         }
                         serialized_posts.append(post_data)
@@ -314,6 +327,9 @@ def post(request):
         posts = Post.objects.filter(family__id__in=family_ids).order_by('-datePosted')
         serialized_posts = []
         for post in posts:
+            post_serialized = PostSerializer(post)
+            family = Family.objects.get(id=post_serialized.data['family'])
+            serialized_family = FamilySerializer(family,context={'request': request})
             user_details = {
                 'id': post.user.id,
                 'first_name': post.user.first_name,
@@ -321,13 +337,18 @@ def post(request):
                 'profile_picture':post.user.profile_picture,
                 # Add other user details as needed
             }
+            family_details = {
+                'id':serialized_family.data['id'],
+                'family_name':serialized_family.data['family_name'],
+                'family_description':serialized_family.data['family_description'],
+            }
             post_data = {
-                'id': PostSerializer(post).data['id'],
-                'title':PostSerializer(post).data['title'],
-                'user':PostSerializer(post).data['user'],
-                'message':PostSerializer(post).data['message'],
-                'family':PostSerializer(post).data['family'],
-                'datePosted':PostSerializer(post).data['datePosted'],
+                'id': post_serialized.data['id'],
+                'title': post_serialized.data['title'],
+                'user': post_serialized.data['user'],
+                'message': post_serialized.data['message'],
+                'datePosted': post_serialized.data['datePosted'],
+                'family_details':family_details,
                 'user_details': user_details
             }
             serialized_posts.append(post_data)
@@ -369,6 +390,11 @@ def post(request):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
     return Response('Invalid Method Request', status=status.HTTP_403_FORBIDDEN)
+
+@api_view(['PATCH'])
+@authentication_classes([SessionAuthentication, BasicAuthentication])
+@permission_classes([IsAuthenticated])
+
 
 @api_view(['GET'])
 @authentication_classes([SessionAuthentication, BasicAuthentication])

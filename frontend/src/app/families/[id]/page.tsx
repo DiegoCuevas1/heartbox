@@ -1,12 +1,8 @@
 'use client'
-import Link from "next/link";
 import { useState,useEffect } from "react";
 import MemberList from "./MemberView";
-import toast from "react-hot-toast";
-import { useUserContext } from "@/context/AuthContext";
 import Image from "next/image";
 import FamilyTimeline from "./FamilyTimeline";
-
 import { useRouter } from "next/navigation";
 import { Family } from "@/app/types";
 
@@ -93,12 +89,13 @@ export default function Page({ params }: { params: { id: string } }) {
             </div> */}
           <div className="flex-col mb-8">
             <div className="flex justify-center">
-              <div className="flex-col flex mr-2">
+              <div className="flex-col flex">
                 <Image
-                  src="/images/family_heartbox.png"
-                  width={200}
+                  src={`https://dev-heartbox.s3.us-east-2.amazonaws.com/family_pics/${data?.family_picture}`}
+                  width={150}
                   height={100}
                   alt={`Selected Heartbox Picture`}
+                  className="flex mx-auto my-2"
                 />
                 <h2 className="shadow-xl flex px-2 font-loves text-lg text-center font-bold mx-auto bg-[#fdeff1] py-1  border-2 border-[#bb474d] rounded-xl">
                   {data?.family_name} 
