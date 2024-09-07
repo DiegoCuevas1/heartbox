@@ -1,5 +1,5 @@
 # Family Memory Keeping App
-Created by Diego Cuevas, Kyle Mantovani
+Created by Diego Cuevas, Kyle Mantovani, Rob Mantovani
 
 ## Backend
 Django framework in Python
