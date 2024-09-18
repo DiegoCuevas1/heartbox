@@ -1,5 +1,5 @@
 'use client';
-import sanitize_res_msg from "@/utils/utilFunctions";
+import { sanitize_res_msg } from "@/utils/utilFunctions";
 import classNames from "classnames";
 import { useRouter } from "next/navigation";
 

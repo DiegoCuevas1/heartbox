@@ -3,7 +3,7 @@ import { FormEvent, useState } from "react";
 import { useRouter } from 'next/navigation';
 import toast from "react-hot-toast";
 import Link from "next/link"; 
-import sanitize_res_msg from "@/utils/utilFunctions";
+import { sanitize_res_msg } from "@/utils/utilFunctions";
 function FormComponent() {
     const [formData, setFormData] = useState({
       email:"",
