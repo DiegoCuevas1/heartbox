@@ -10,10 +10,14 @@ const config: Config = {
     extend: {
       colors: {
        
-        main: "#FDE9F1",
-        links:"#D31C60",
-        border: "#D31C60",
+        main: "#FFFFFF",
+        links:"#d31c60",
+        posts:"#fdeff1",
+        border: "#d31c60",
         default: "#000000",
+        secondary:"#A0A0A0",
+        date:'#808080',
+        grayrgb:'#d8d8d8'
       },
       backgroundColor: {
         'pink-background': 'var(--color-pink-background)',

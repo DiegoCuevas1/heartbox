@@ -4,6 +4,7 @@ import PostCard from "@/components/postCard"
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import TimelinePostCard from "@/app/timeline/timelineCard";
 async function getData(familyId:string|undefined) {
   
     try {
@@ -57,19 +58,7 @@ export default function FamilyTimeline({id}:FamilyTimelineProps){
     ,[id, router])
     return(
         <div className="flex-col flex">
-           <div className="grid grid-cols-3 gap-2 mx-4">
-                <div className="flex mt-8">
-                    <Link href='/create-post'><button className="bg-border text-white py-1/2 px-2 rounded-md hover:bg-[#e577a0] transition-all">Add Relic</button></Link>
-                </div>
-                <div className="flex h-10">
-                    <h2 className="mx-auto text-3xl border-b-4 border-[#d31c60] font-loves font-bold">POSTS</h2>
-                </div>
-                {/* <div className="flex mt-8 justify-end">
-                    <button className="bg-border text-white py-1/2 px-2 rounded-md hover:bg-[#e577a0] transition-all">Filter</button>
-                </div> */}
-                
-            </div>
-            <div className="h-2 mt-1 mx-4 rounded-xl bg-[#d31c60]"></div>
+            <div className="h-2  mx-4 rounded-xl bg-border"></div>
             <div className={`flex-col mt-1 ${posts && posts.length<3 && 'pb-48'}`}>
             {!posts && 
             <div className="flex justify-center items-center">
@@ -86,9 +75,7 @@ export default function FamilyTimeline({id}:FamilyTimelineProps){
             }
             {posts && Array.isArray(posts) && posts.map((post,index) => (
               <div key={index} className="flex-col mt-2">
-                <Link href={`/posts/${post.id}`} className="space-y-2">
-                  <PostCard post={post}/>
-                </Link>
+                <TimelinePostCard post={post} />
               </div>
                 ))}
 

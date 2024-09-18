@@ -1,3 +1,4 @@
+from datetime import datetime
 import json
 import os
 import uuid
@@ -10,6 +11,7 @@ from django.http.response import JsonResponse
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
+import pytz
 from rest_framework.authentication import SessionAuthentication, BasicAuthentication
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.parsers import JSONParser
@@ -192,6 +194,26 @@ def family(request):
 
     return Response(serializer.errors, status=400)
 
+@api_view(['GET'])
+@authentication_classes([SessionAuthentication, BasicAuthentication])
+@permission_classes([IsAuthenticated])
+def getMembersOfFamily(request):
+    if request.method == 'GET':
+        family_id = request.GET.get('familyId')
+        if family_id:
+            # If familyId is provided, filter the families based on the ID
+            try:
+                user_families = Family.objects.filter(id=family_id, members=request.user)
+                serializer = FamilySerializer(user_families, many=True, context={'request': request})
+                if serializer.data == []:
+                    return Response('Family Does Not Exist', status=400)
+                return Response(serializer.data['members'], status=200)
+
+            except ValueError:
+                return Response("Invalid familyId format", status=400)
+        
+        return Response('it works',status=200)
+
 
 @api_view(['POST'])
 @authentication_classes([SessionAuthentication,BasicAuthentication])
@@ -284,7 +306,7 @@ def post(request):
             try:
                 family = Family.objects.get(id=family_id)
                 if request.user in family.members.all():
-                    posts = Post.objects.get_posts_in_family(family)
+                    posts = Post.objects.get_posts_in_family(family).order_by('-datePosted')
                     # Serialize posts along with user details
                     serialized_posts = []
                     for post in posts:
@@ -367,7 +389,11 @@ def post(request):
         
         data= request.data
         data['user'] = request.user.id
-        data['datePosted'] = timezone.now() 
+        
+        converted_tz = pytz.timezone('US/Eastern')
+        # Convert the current time to EST
+       
+        data['datePosted'] = datetime.now(converted_tz)
         serializer = PostSerializer(data=data,context={'request':request})      
         
         # serializer = PostSerializer(data=request.data,context={'request':request})
@@ -391,9 +417,6 @@ def post(request):
     
     return Response('Invalid Method Request', status=status.HTTP_403_FORBIDDEN)
 
-@api_view(['PATCH'])
-@authentication_classes([SessionAuthentication, BasicAuthentication])
-@permission_classes([IsAuthenticated])
 
 
 @api_view(['GET'])
@@ -406,10 +429,12 @@ def notification(request):  # Accept the notificationId as a parameter
             try:
                 notification = Notification.objects.get(id=notificationId)
                 serializer = NotificationSerializer(notification)
+                family = Family.objects.get(id=serializer.data['family_joined'])
                 family_details = {
-                    'id':serializer.data['family'].id
+                    'id':family.id,
+                    'family_name':family.family_name,
+                    'family_picture':family.family_picture
                 }
-                print(family_details)
                 user_details = {
                     'id': notification.sender.id,
                     'first_name': notification.sender.first_name,
@@ -421,7 +446,7 @@ def notification(request):  # Accept the notificationId as a parameter
                     'id': serializer.data['id'],
                     'notification_type': serializer.data['notification_type'],
                     'timestamp': serializer.data['timestamp'],
-                    'family_joined':serializer.data['family_joined']
+                    'family_details':family_details
                 }
                 return Response(notification_details, status=status.HTTP_200_OK)
             except Notification.DoesNotExist:
@@ -456,8 +481,10 @@ def notification(request):  # Accept the notificationId as a parameter
             serialized_notifications.append(notification_details)
 
         return Response(serialized_notifications, status=status.HTTP_200_OK)
+    
+    return Response('Invalid Method Request', status=status.HTTP_403_FORBIDDEN)
 
-    return Response({'error': 'Invalid Method Request'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+    
 
 @api_view(['GET'])
 @authentication_classes([SessionAuthentication, BasicAuthentication])

@@ -89,7 +89,7 @@ SESSION_ENGINE = 'django.contrib.sessions.backends.db'
 
 
 CORS_ALLOWED_ORIGINS = [
-    'http://localhost:3000',
+    'http://localhost:3000'
 ]
 
 CORS_ALLOW_HEADERS = [
@@ -142,7 +142,7 @@ DATABASES = {
         'NAME': 'postgres',
         'USER': 'postgres',
         'PASSWORD': 'mypassword',
-        'HOST': 'my-postgres',
+        'HOST': 'heartbox-my-postgres-1',
         'PORT': '5432',
     }
 }

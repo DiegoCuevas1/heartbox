@@ -40,7 +40,6 @@ class UserProfile(AbstractBaseUser, PermissionsMixin):
     objects = UserProfileManager()
     families = models.ManyToManyField('Family', related_name='family_members',related_query_name="family_member")
     
-
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['last_name', 'first_name','birthdate','pin']
 
@@ -102,6 +101,7 @@ class Family(models.Model):
     family_picture = models.CharField('Family Picture', max_length=255, default='families.png')
     objects = FamilyManager()
 
+
 class PostManager(models.Manager):
     def create_post(self, title, message, user, family=None, date_posted=None):
         post = self.create(
@@ -130,7 +130,7 @@ class Post(models.Model):
     title = models.CharField(max_length=200)
     datePosted = models.DateTimeField(auto_now_add=True)
     likes = models.ManyToManyField(get_user_model(), related_name='liked_posts', blank=True)
-
+ 
     objects = PostManager()
     # For video hosting implementation:
     # video = models.CharField(max_length=500)

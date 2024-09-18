@@ -6,7 +6,7 @@ import Image from "next/image";
 import toast from "react-hot-toast";
 import { useUserContext } from "@/context/AuthContext";
 import router from "next/router";
-import sanitize_res_msg from "@/utils/utilFunctions";
+import {sanitize_res_msg} from "@/utils/utilFunctions";
 import { useRouter } from "next/navigation";
 
 async function getData() {
@@ -77,6 +77,7 @@ export default function FormComponent()
             family_description: '',
             invite_code: '',
             members: [],
+            family_picture:''
         }
     );
     const [families, setFamilies] = useState<Family[]>([])
@@ -126,17 +127,12 @@ export default function FormComponent()
                 <div className="flex mx-auto space-x-4">
                     <div className="flex-col flex space-y-2">
                         <div onClick={toggleFamilyModal} className="flex mx-auto bg-white py-4 px-5 border-2 border-[#d31c60] rounded-xl">
-                            {selectedFamily?.family_name=== '' ? <p className="text-white text-xl items-center justify-center text-center pb-1 px-[9px] bg-[#d31c60] rounded-full">+</p> : <Image src={"/images/families.png"} width={35} height={50} alt={""}></Image>}
+                            {selectedFamily?.family_name=== '' ? <p className="text-white text-xl items-center justify-center text-center pb-1 px-[9px] bg-[#d31c60] rounded-full">+</p> : <Image src={`https://dev-heartbox.s3.us-east-2.amazonaws.com/family_pics/${selectedFamily?.family_picture}`} width={35} height={50} alt={""}></Image>}
                         </div>
                         <div className="flex">
                             <p className="flex bg-white border-2 border-[#d31c60] px-2 rounded-lg font-loves font-bold">
                                 {selectedFamily?.family_name === '' ? 'Select Family' : selectedFamily?.family_name}
                             </p>
-                            {/* <select className="border-[#d31c60] font-loves font-bold italic rounded-md px-2 border-2">
-                                <option value="" disabled selected hidden>Select Family</option>
-                                <option value="family1">Family 1</option>
-                                <option value="family2">Family 2</option>
-                            </select> */}
                         </div>
                     </div>
                     
@@ -154,8 +150,8 @@ export default function FormComponent()
                             <div key={index} className="flex-col justify-center flex hover:bg-[#f3d8e6] active:bg-[#f3d8e6]">
                                 <div onClick={()=>selectFamily(index)} className="flex  py-2  px-1 hover:cursor-pointer space-x-3">
                                     <Image 
-                                        alt="hello"
-                                        src="/images/families.png"
+                                        alt={`${family.family_name}'s family picture`}
+                                        src={`https://dev-heartbox.s3.us-east-2.amazonaws.com/family_pics/${family.family_picture}`}
                                         width={40}
                                         height={40}
                                     />

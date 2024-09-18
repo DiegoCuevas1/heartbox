@@ -2,7 +2,7 @@
 import { FormEvent } from "react";
 import toast from "react-hot-toast";
 import { navSignIn } from "@/utils/NavAuthToggle";
-import sanitize_res_msg from "@/utils/utilFunctions";
+import {sanitize_res_msg} from "@/utils/utilFunctions";
 import { useRouter } from "next/navigation";
 import { useUserContext } from "@/context/AuthContext";
 

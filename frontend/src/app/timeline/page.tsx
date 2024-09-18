@@ -48,7 +48,6 @@ export default function Timeline() {
             {posts && Array.isArray(posts) && posts.map((post,index) => (
               <div key={index} className="flex-col mt-2">
                 <TimelinePostCard post={post} />
-                <div className="h-[1px] mt-2 bg-[#d31c60]"/>
               </div>
             ))}
             {posts && posts?.length===0 && 
