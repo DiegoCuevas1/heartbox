@@ -1,10 +1,10 @@
 from rest_framework import serializers
-from .models import Family,  UserProfile, Post
+from .models import Family, Notification,  UserProfile, Post
 
 class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserProfile
-        fields = ['id', 'first_name', 'last_name']
+        fields = ['id', 'first_name', 'last_name','profile_picture']
         # You can include other fields as needed
 
 class PostSerializer(serializers.ModelSerializer):
@@ -20,10 +20,9 @@ class PostSerializer(serializers.ModelSerializer):
 class FamilySerializer(serializers.ModelSerializer):
     invite_code = serializers.SerializerMethodField()
     members = serializers.SerializerMethodField()
-    posts = serializers.SerializerMethodField()
     class Meta:
         model = Family
-        fields = ['id', 'family_name', 'family_description', 'invite_code', 'members','posts']
+        fields = ['id', 'family_name', 'family_description', 'invite_code', 'members','family_picture']
         # Include other fields related to the Family model
 
     def get_members(self, obj):
@@ -60,7 +59,7 @@ class FamilySerializer(serializers.ModelSerializer):
 
         return None
     
-# class NotificationSerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = Notification
-#         fields = ['id','user_id','message','notification_type']
+class NotificationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Notification
+        fields = ['id', 'notification_type', 'timestamp','sender', 'recipient','family_joined','post_mentioned']

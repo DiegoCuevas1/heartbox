@@ -1,16 +1,17 @@
+import { Family } from "./family";
 import { User } from "./user";
 
 type Post = {
-    post_details:{
-        id:number,
-        title:string,
-        user:number,
-        message:string,
-        family:number,
-        datePosted:string,
-    }
+    
+    id:number,
+    title:string,
+    user:number,
+    message:string,
+    family_details:Family,
+    datePosted:string,
+    
   
-    user_details: any;
+    user_details: User,
     // Add other post details here if needed
 }
 

@@ -1,10 +1,11 @@
 import { User } from "./user";
 
-interface Family {
+type Family = {
     id: number;
     family_name: string;
     family_description: string;
-    inviteCode: string;
+    invite_code: string;
     members: User[];
+    family_picture:string;
   }
   export type { Family };

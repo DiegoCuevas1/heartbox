@@ -1,22 +1,12 @@
 'use client'
-import Link from "next/link";
 import { useState,useEffect } from "react";
 import MemberList from "./MemberView";
-import toast from "react-hot-toast";
-import { useUserContext } from "@/context/AuthContext";
 import Image from "next/image";
 import FamilyTimeline from "./FamilyTimeline";
-import { User } from "@/app/types/user";
 import { useRouter } from "next/navigation";
+import { Family } from "@/app/types";
 
 
-type FamilyProps = {
-  id:string,
-  family_name:string,
-  family_description:string,
-  members:User[],
-
-}
 
 
 
@@ -42,7 +32,7 @@ async function getData(familyId:string) {
   }
 }
 export default function Page({ params }: { params: { id: string } }) {
-  const [data, setData] = useState<FamilyProps>();
+  const [data, setData] = useState<Family>();
   const router =useRouter();
 
   useEffect(() => {
@@ -82,7 +72,7 @@ export default function Page({ params }: { params: { id: string } }) {
       //   }
       // }
     return (
-        <div className="pb-48 flex flex-col bg-[#fde9f1]">
+        <div className="flex flex-col bg-main">
             {/* <Link href={'/families'} className="p-4">{'< Back to My Families'}</Link>
             <div className="flex space-x-4">
                 <div className="flex w-96 h-10 ml-4 bg-[#333333]">
@@ -97,20 +87,22 @@ export default function Page({ params }: { params: { id: string } }) {
                 </div>
                 
             </div> */}
-          <div className="flex-col my-8">
-            <div className="flex space-x-2 justify-center">
+          <div className="flex-col mb-8">
+            <div className="flex-col justify-center">
               <div className="flex-col flex">
+                <h2 className="text-3xl border-b-4 border-[#d31c60] font-loves font-bold mx-auto mt-1">{data?.family_name}</h2>
                 <Image
-                  src="/images/family_heartbox.png"
-                  width={200}
+                  src={`https://dev-heartbox.s3.us-east-2.amazonaws.com/family_pics/${data?.family_picture}`}
+                  width={250}
                   height={100}
                   alt={`Selected Heartbox Picture`}
+                  className="flex mx-auto mt-2"
                 />
-                <h2 className="shadow-xl ml-2 text-center font-loves text-lg font-bold mx-auto bg-[#fdeff1] py-1  border-2 border-[#bb474d] rounded-xl">
-                  {data?.family_name}  
-                </h2>
+                {/* <h2 className="shadow-xl flex px-2 font-loves text-lg text-center font-bold mx-auto bg-[#fdeff1] py-1  border-2 border-[#bb474d] rounded-xl">
+                  {data?.family_name} 
+                </h2> */}
               </div>
-              <MemberList members={data?.members}/>
+              <MemberList id={data?.id} members={data?.members} invite_code={data?.invite_code} />
             </div>
             <div className="mt-2 "> <FamilyTimeline id={params.id}></FamilyTimeline> </div>
             

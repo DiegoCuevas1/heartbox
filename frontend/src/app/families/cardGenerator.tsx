@@ -1,13 +1,11 @@
 'use client';
 import { useEffect, useState } from "react";
 import Card from "./card";
+import toast from "react-hot-toast";
+import { Family } from "../types";
 
 
-type Family = {
-  id:string,
-  family_name:string,
-  family_description:string,
-}
+
 
 async function getData() {
     try {
@@ -15,6 +13,22 @@ async function getData() {
         method: "GET",
         credentials: "include",
       });
+      
+      if (res.status === 403) {
+        // Handle 403 Forbidden response
+        toast.error('',{
+            style: {
+              border: '1px solid #713200',
+              padding: '6px 10px',
+              backgroundColor: '#d31c60',
+              color:'#FFFFFF'
+            },
+            iconTheme: {
+              primary: '#ffffff',
+              secondary: '#d31c60',
+            },
+          })
+      }
   
       if (!res.ok) {
         // Handle error cases

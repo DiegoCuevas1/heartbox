@@ -15,7 +15,7 @@ const Landing = () => {
     }
   }, [authStatus, router]);
 
-  return null; // No need for any JSX here since the redirection is handled in useEffect
+  return null; // No need for any TSX here since the redirection is handled in useEffect
 };
 
 export default Landing;

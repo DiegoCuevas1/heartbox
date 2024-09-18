@@ -5,6 +5,9 @@ import { Toaster } from "react-hot-toast";
 import { UserContextProvider } from "@/context/AuthContext";
 import NavBar from '@/components/layout/navbar';
 import BottomNavBar from '@/components/layout/bottom-nav';
+import React from 'react';
+import Head from 'next/head';
+
 
 
 const inter = Inter({ subsets: ['latin'] })
@@ -21,10 +24,32 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
+      <Head>
+        <title>HeartBox App</title>
+        <meta name="description" content="created by Diego Cuevas, Rob Mantovani, Kyle Mantovani" />
+      </Head>
       <body className={`bg-main ${inter.className}`}>
         <Toaster
         position="top-left"
         reverseOrder={false}
+        toastOptions={{
+          style: {
+            background: '#d31c60',
+            color:'white'
+          },
+          success: {
+            iconTheme: {
+              primary: 'white',
+              secondary: '#D31c60',
+            },
+          },
+          error:{
+            iconTheme:{
+              primary:'white',
+              secondary:'#D31C60'
+            }
+          }
+        }}
          />
         <UserContextProvider>
           <NavBar />

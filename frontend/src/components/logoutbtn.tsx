@@ -4,7 +4,7 @@ import { navSignOut } from "@/utils/NavAuthToggle";
 import { useUserContext } from "@/context/AuthContext";
 import getCSRF from "@/utils/cookie";
 import { redirect, useRouter } from "next/navigation";
-import sanitize_res_msg from "@/utils/utilFunctions";
+import {sanitize_res_msg} from "@/utils/utilFunctions";
 
 
 

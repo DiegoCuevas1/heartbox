@@ -1,6 +1,28 @@
-function sanitize_res_msg(message:string) {
+export function sanitize_res_msg(message:string) {
     // Sanitize a response message by removing quotes
     const sanitizedMessage = message.replace(/["']/g, '');
     return sanitizedMessage;
 }
-export default sanitize_res_msg;
+
+export function getTimeSincePost(datePosted: Date) {
+    const postDate = new Date(datePosted);
+    const currentDate = new Date();
+    const estOffset = -4 * 60;
+    const estTime = new Date(postDate.getTime() + estOffset * 60000)
+    const timeDifference = currentDate.getTime() - estTime.getTime();
+    const millisecondsPerHour = 1000 * 60 * 60;
+    const millisecondsPerDay = millisecondsPerHour * 24;
+
+    if (timeDifference < millisecondsPerHour) {
+        const minutes = Math.floor(timeDifference / (1000 * 60));
+        return `${minutes}min`;
+    } else if (timeDifference < millisecondsPerDay) {
+        const hours = Math.floor(timeDifference / millisecondsPerHour);
+        return `${hours}hr`;
+    } else if (timeDifference < millisecondsPerDay * 7) {
+        const days = Math.floor(timeDifference / millisecondsPerDay);
+        return `${days}d`;
+    } else {
+        return `${postDate.getMonth() + 1}/${postDate.getDate()}/${postDate.getFullYear().toString().slice(-2)}`;
+    }
+}

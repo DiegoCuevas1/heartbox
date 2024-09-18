@@ -1,15 +1,15 @@
 "use client";
 import { FormEvent } from "react";
-import { useRouter } from 'next/navigation'
 import toast from "react-hot-toast";
 import { navSignIn } from "@/utils/NavAuthToggle";
-import sanitize_res_msg from "@/utils/utilFunctions";
+import {sanitize_res_msg} from "@/utils/utilFunctions";
+import { useRouter } from "next/navigation";
+import { useUserContext } from "@/context/AuthContext";
 
-function FormComponent() {
-    const validate = (email: any) =>
-        /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,4}$/i.test(email);
 
+function FormComponent() {  
     const router = useRouter();
+  
     const handleSubmit = async (e:FormEvent<HTMLFormElement>) =>
     {
         e.preventDefault();
@@ -31,12 +31,14 @@ function FormComponent() {
               });
             const res_msg = await res.text(); 
             if (res.ok) {
-                toast.success(sanitize_res_msg(res_msg));
                 navSignIn();
-                router.push("/families");
-              } else toast.error(res_msg);
+                
+                setTimeout(() => {
+                  window.location.href='/families'
+                }, 400);
+              } else toast.error(sanitize_res_msg(res_msg));
             } catch (error) {
-              toast.error((error as Error).toString());
+              toast.error(sanitize_res_msg((error as Error).toString()));
         }
     }
 
@@ -87,7 +89,7 @@ function FormComponent() {
               Forgot Password?
             </button>
             </div>
-            <button className="w-36 h-12 rounded-xl text-white drop-shadow-xl bg-[#d31c60] font-loves font-bold text-3xl hover:cursor-pointer hover:scale-125 active:scale-95 transition-all">
+            <button type="submit" className="w-36 h-12 rounded-xl text-white drop-shadow-xl bg-[#d31c60] font-loves font-bold text-3xl hover:cursor-pointer hover:scale-125 active:scale-95 transition-all">
               Enter
             </button>
           </form>
