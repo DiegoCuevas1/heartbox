@@ -58,7 +58,7 @@ export default function FamilyTimeline({id}:FamilyTimelineProps){
     ,[id, router])
     return(
         <div className="flex-col flex">
-            <div className="h-2  mx-4 rounded-xl bg-border"></div>
+            <div className="h-2  mx-4 rounded-xl bg-links"></div>
             <div className={`flex-col mt-1 ${posts && posts.length<3 && 'pb-48'}`}>
             {!posts && 
             <div className="flex justify-center items-center">
@@ -70,7 +70,7 @@ export default function FamilyTimeline({id}:FamilyTimelineProps){
             {posts && posts.length == 0 && 
               <div className="flex-col flex justify-center space-y-2 items-center text-2xl w-full pb-60" >
                 <p>Be the first to post in this family!</p>
-                <Link href={"/create-post"}><button className="p-2 bg-[#D31C5F] w-36 text-xl font-loves font-bold text-white mt-3 rounded-lg shadow-[0_20px_10px_-15px_rgba(0,0,0,.3)] mx-auto hover:scale-125 active:scale-90 transition-all">Create Post</button></Link>
+                <Link href={"/create-post"}><button className="p-2 bg-[#4D94D0] w-36 text-xl font-loves font-bold text-white mt-3 rounded-lg shadow-[0_20px_10px_-15px_rgba(0,0,0,.3)] mx-auto hover:scale-125 active:scale-90 transition-all">Create Post</button></Link>
               </div>
             }
             {posts && Array.isArray(posts) && posts.map((post,index) => (
@@ -81,7 +81,7 @@ export default function FamilyTimeline({id}:FamilyTimelineProps){
 
             {posts && posts.length>=1 && 
               <div className="flex justify-center items-center mt-4 ">
-                <Link href={"/create-post"}><button className="p-2 bg-[#D31C5F] w-36 text-xl font-loves font-bold text-white mt-3 rounded-lg shadow-[0_20px_10px_-15px_rgba(0,0,0,.3)] mx-auto hover:scale-125 active:scale-90 transition-all">Create Post</button></Link>
+                <Link href={"/create-post"}><button className="p-2 bg-[#4D94D0] w-36 text-xl font-loves font-bold text-white mt-3 rounded-lg shadow-[0_20px_10px_-15px_rgba(0,0,0,.3)] mx-auto hover:scale-125 active:scale-90 transition-all">Create Post</button></Link>
               </div>}
             </div>
         </div>

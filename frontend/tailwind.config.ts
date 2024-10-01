@@ -11,7 +11,7 @@ const config: Config = {
       colors: {
        
         main: "#FFFFFF",
-        links:"#d31c60",
+        links:"#4D94D0",
         posts:"#fdeff1",
         border: "#d31c60",
         default: "#000000",

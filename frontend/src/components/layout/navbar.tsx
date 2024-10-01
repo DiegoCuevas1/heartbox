@@ -35,7 +35,7 @@ const NavBar = () =>
     
     return(
         <nav>
-            <div className="flex fixed z-[1000] justify-around w-screen px-8 items-center h-28 bg-gradient-to-l from-[#f4a7a7] via-[#f9c0c1] to-[#f4a7a7]">
+            <div className="flex fixed z-[1000] justify-around w-screen px-8 items-center h-28 bg-gradient-to-l from-[#4D94D0] via-[#4d80D0] to-[#4D94D0]">
                 <div className="flex w-12"></div>
                 <div className="flex items-center"> 
                     <Link href={authStatus?"/timeline":'/home'} className="text-black">

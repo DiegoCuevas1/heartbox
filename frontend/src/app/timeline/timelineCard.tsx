@@ -17,7 +17,7 @@ export default function TimelinePostCard({post}:{post:Post})
                 <div className="flex items-center space-x-2 px-4 ">
                     <Link href={``}>
                         <Image
-                            src={`https://dev-heartbox.s3.us-east-2.amazonaws.com/profile_pics/${post.user_details.profile_picture}`}
+                            src="/images/default_profpic.png"
                             width={50}
                             height={50}
                             alt={`${post.user_details.first_name} ${post.user_details.last_name}'s profile picture`}
@@ -28,7 +28,7 @@ export default function TimelinePostCard({post}:{post:Post})
                     <div className="flex justify-between">
                         <div className="flex-col ">
                             <h2  className={`flex`}><Link href={'/'}>{post.user_details.first_name} {post.user_details.last_name}</Link><span className="ml-2 text-date">{timeSincePost}</span></h2>
-                            <p className="text-secondary">Posted in <Link className="text-links font-bold" href={`families/${post.family_details.id}`}>{post.family_details.family_name}</Link> family</p>
+                            <p className="text-secondary">Posted in <Link className="text-links font-bold" href={`/families/${post.family_details.id}`}>{post.family_details.family_name}</Link> family</p>
                         </div> 
                     </div>
                 </div>

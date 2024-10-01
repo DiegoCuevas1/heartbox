@@ -90,9 +90,9 @@ export default function Page({ params }: { params: { id: string } }) {
           <div className="flex-col mb-8">
             <div className="flex-col justify-center">
               <div className="flex-col flex">
-                <h2 className="text-3xl border-b-4 border-[#d31c60] font-loves font-bold mx-auto mt-1">{data?.family_name}</h2>
+                <h2 className="text-3xl border-b-4 border-[#4D94D0] font-loves font-bold mx-auto mt-1">{data?.family_name}</h2>
                 <Image
-                  src={`https://dev-heartbox.s3.us-east-2.amazonaws.com/family_pics/${data?.family_picture}`}
+                  src="/images/families.png"
                   width={250}
                   height={100}
                   alt={`Selected Heartbox Picture`}

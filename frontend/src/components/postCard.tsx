@@ -19,7 +19,7 @@ export default function PostCard({post}:{post:Post})
             <div className="flex items-center space-x-2 px-4 ">
                 <Link href={``}>
                     <Image
-                        src={`https://dev-heartbox.s3.us-east-2.amazonaws.com/profile_pics/${post.user_details.profile_picture}`}
+                        src="/images/default_profpic.png"
                         width={50}
                         height={50}
                         alt={`${post.user_details.first_name} ${post.user_details.last_name}'s profile picture`}
