@@ -1,6 +1,7 @@
 import string
 import random
-from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseUserManager
+import uuid
+from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseUserManager, Group, Permission
 from django.contrib.auth import get_user_model
 from django.db import models
 from django.db.models.signals import post_save
@@ -28,6 +29,7 @@ class UserProfileManager(BaseUserManager):
         return user
 
 class UserProfile(AbstractBaseUser, PermissionsMixin):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     email = models.EmailField(_('email'), unique=True)
     last_name = models.CharField(_('lastName'), max_length=100)
     first_name = models.CharField(_('firstName'), max_length=100)   
@@ -39,6 +41,8 @@ class UserProfile(AbstractBaseUser, PermissionsMixin):
     is_staff = models.BooleanField(_('staff status'), default=False)
     objects = UserProfileManager()
     families = models.ManyToManyField('Family', related_name='family_members',related_query_name="family_member")
+
+
     
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['last_name', 'first_name','birthdate','pin']

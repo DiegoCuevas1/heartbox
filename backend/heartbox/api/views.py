@@ -127,13 +127,16 @@ def check_login(request):
             email = request.session['email']
             logged_in_user = UserProfile.objects.get(email = email)
             ret_user = {
-                "id": logged_in_user.id,
+                "id": str(logged_in_user.id),
                 "f_name": logged_in_user.first_name,
                 "l_name": logged_in_user.last_name,
                 "profilePic": logged_in_user.profile_picture
             }
             return JsonResponse({"data": json.dumps(ret_user), "message": "Logged In"}, status=202)
-        except:
+        except UserProfile.DoesNotExist:
+            return JsonResponse({"message": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+    
+        except Exception as e:
             return JsonResponse({"message": "Error loading logged in user data"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
 @api_view(['GET','POST'])
