@@ -1,6 +1,7 @@
 from datetime import datetime
 import json
 import os
+from uuid import UUID
 import uuid
 import boto3
 from botocore.exceptions import ClientError
@@ -274,6 +275,7 @@ def leave_family(request):
 @permission_classes([IsAuthenticated])
 def post(request):
     if request.method == 'GET':
+        user_id = request.GET.get('userId')
         post_id = request.GET.get('postId')
         family_id = request.GET.get('familyId')
         if post_id:
@@ -344,6 +346,49 @@ def post(request):
                     return Response("User is not a member of this family", status=status.HTTP_403_FORBIDDEN)
             except Family.DoesNotExist:
                 return Response("Family not found", status=404)
+        if user_id:
+            try:
+                # Validate if the provided user_id is a valid UUID
+                UUID(user_id)
+            except ValueError:
+                raise ValidationError("Invalid userId format")
+
+            try:
+                # Fetch the user by UUID
+                user = UserProfile.objects.get(id=user_id)
+                posts = Post.objects.filter(user=user).order_by('-datePosted')
+                serialized_posts = []
+                for post in posts:
+                    post_serialized = PostSerializer(post)
+                    family = Family.objects.get(id=post_serialized.data['family'])
+                    serialized_family = FamilySerializer(family, context={'request': request})
+                    user_details = {
+                        'id': post.user.id,
+                        'first_name': post.user.first_name,
+                        'last_name': post.user.last_name,
+                        'profile_picture': post.user.profile_picture,
+                    }
+                    family_details = {
+                        'id': serialized_family.data['id'],
+                        'family_name': serialized_family.data['family_name'],
+                        'family_description': serialized_family.data['family_description'],
+                    }
+                    post_data = {
+                        'id': post_serialized.data['id'],
+                        'title': post_serialized.data['title'],
+                        'user': post_serialized.data['user'],
+                        'message': post_serialized.data['message'],
+                        'datePosted': post_serialized.data['datePosted'],
+                        'family_details': family_details,
+                        'user_details': user_details
+                    }
+                    serialized_posts.append(post_data)
+
+                return Response(serialized_posts, status=200)
+
+            except UserProfile.DoesNotExist:
+                return Response("User not found", status=404)
+            
         
         user = UserProfile.objects.get(id=request.user.id)
         families = user.families.all()
@@ -420,7 +465,33 @@ def post(request):
     
     return Response('Invalid Method Request', status=status.HTTP_403_FORBIDDEN)
 
+@api_view(['GET'])
+@authentication_classes([SessionAuthentication, BasicAuthentication])
+@permission_classes([IsAuthenticated])
+def get_user_details(request):
+    user_id = request.GET.get('userId')  # Extract userId from query parameters
 
+    if not user_id:
+        return Response({"error": "userId query parameter is required"}, status=400)
+
+    try:
+        # Validate if the provided user_id is a valid UUID
+        UUID(user_id)
+    except ValueError:
+        return Response({"error": "Invalid userId format"}, status=400)
+
+    try:
+        # Fetch the user by UUID
+        user = UserProfile.objects.get(id=user_id)
+        
+        # Serialize the user data
+        user_serialized = UserProfileSerializer(user, context={'request': request})
+        
+        # Return serialized user details in the response
+        return Response(user_serialized.data, status=200)
+    
+    except UserProfile.DoesNotExist:
+        return Response({"error": "User not found"}, status=404)
 
 @api_view(['GET'])
 @authentication_classes([SessionAuthentication, BasicAuthentication])

@@ -17,7 +17,7 @@ export default function PostCard({post}:{post:Post})
     return(
         <div className="flex-col flex border-b-[1px] border-grayrgb">
             <div className="flex items-center space-x-2 px-4 ">
-                <Link href={``}>
+                <Link href={`/profile/${post.user}`}>
                     <Image
                         src="/images/default_profpic.png"
                         width={50}
@@ -29,8 +29,8 @@ export default function PostCard({post}:{post:Post})
                 </Link>
                 <div className="flex justify-between">
                     <div className="flex-col ">
-                        <h2  className={`flex`}><Link href={'/'}>{post.user_details.first_name} {post.user_details.last_name}</Link></h2>
-                        <p className="font-bold text-links"><Link href={`families/${post.family_details.id}`}>{post.family_details.family_name}</Link></p>
+                        <h2  className={`flex`}><Link href={`/profile/${post.user}`}>{post.user_details.first_name} {post.user_details.last_name}</Link></h2>
+                        <p className="font-bold text-links"><Link href={`/families/${post.family_details.id}`}>{post.family_details.family_name}</Link></p>
                     </div>
                 </div>
             </div>

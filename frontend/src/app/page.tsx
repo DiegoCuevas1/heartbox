@@ -1,5 +1,5 @@
-'use client';
-import { useEffect } from 'react';
+"use client";
+import { useEffect } from "react";
 import { useUserContext } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 
@@ -9,9 +9,9 @@ const Landing = () => {
 
   useEffect(() => {
     if (authStatus) {
-      router.push('/timeline');
+      router.push("/timeline");
     } else {
-      router.push('/home');
+      router.push("/home");
     }
   }, [authStatus, router]);
 

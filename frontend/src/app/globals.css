@@ -2,16 +2,15 @@
 @tailwind components;
 @tailwind utilities;
 html {
-    scroll-behavior: smooth;
-    overflow-x:hidden;
-  }
+  scroll-behavior: smooth;
+  overflow-x: hidden;
+}
 @font-face {
-    font-family: 'LOVES';
-    src: url('/fonts/LOVES.ttf') format('truetype');
-    font-weight: normal;
-    font-style: normal;
-  }
+  font-family: "LOVES";
+  src: url("/fonts/LOVES.ttf") format("truetype");
+  font-weight: normal;
+  font-style: normal;
+}
 .text-shadow {
   text-shadow: 1px 1px 5px black;
 }
-
