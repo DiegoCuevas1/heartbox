@@ -5,9 +5,9 @@ import { Family } from "../types";
 import Image from "next/image";
 import toast from "react-hot-toast";
 import { useUserContext } from "@/context/AuthContext";
-import router from "next/router";
+
 import { sanitize_res_msg } from "@/utils/utilFunctions";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 async function getData() {
   try {
@@ -34,6 +34,7 @@ async function getData() {
 export default function FormComponent() {
   const user = useUserContext();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
@@ -82,12 +83,21 @@ export default function FormComponent() {
         const fetchedData = await getData();
         // Process data or set it to state as needed
         setFamilies(fetchedData);
+        const familyId = searchParams.get("familyId");
+        if (familyId) {
+          const family = fetchedData.find(
+            (f: { id: number }) => f.id === parseInt(familyId)
+          );
+          if (family) {
+            setSelectedFamily(family); // Set the selected family based on the URL param
+          }
+        }
       } catch (error: any) {
         console.error("Error in fetchData:", error.message);
       }
     }
     fetchData();
-  }, []);
+  }, [searchParams]);
   const selectFamily = (index: number) => {
     setSelectedFamily(families[index]);
     setFamilyModal(false); // Close the modal upon selecting a family
@@ -129,14 +139,14 @@ export default function FormComponent() {
                 </p>
               ) : (
                 <Image
-                  src={`https://dev-heartbox.s3.us-east-2.amazonaws.com/family_pics/${selectedFamily?.family_picture}`}
+                  src={`/images/default_profpic.png`}
                   width={35}
                   height={50}
                   alt={""}
                 ></Image>
               )}
             </div>
-            <div className="flex">
+            <div className="flex justify-center">
               <p className="flex bg-white border-2 border-[#d31c60] px-2 rounded-lg font-loves font-bold">
                 {selectedFamily?.family_name === ""
                   ? "Select Family"
@@ -168,7 +178,7 @@ export default function FormComponent() {
               >
                 <Image
                   alt={`${family.family_name}'s family picture`}
-                  src={`https://dev-heartbox.s3.us-east-2.amazonaws.com/family_pics/${family.family_picture}`}
+                  src={`/images/default_profpic.png`}
                   width={40}
                   height={40}
                 />

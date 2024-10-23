@@ -4,8 +4,19 @@ from .models import Family, Notification,  UserProfile, Post
 class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserProfile
-        fields = ['id', 'first_name', 'last_name','profile_picture']
-        # You can include other fields as needed
+        fields = ['id', 'first_name', 'last_name', 'profile_picture']
+
+    def to_representation(self, instance):
+        # Get the default representation
+        representation = super().to_representation(instance)
+        
+        # Check if the request user is the same as the user being viewed
+        request = self.context.get('request')
+        if request and request.user == instance:
+            # Add families only if viewing own profile
+            representation['families'] = FamilySerializer(instance.families, many=True, context=self.context).data
+        
+        return representation
 
 class PostSerializer(serializers.ModelSerializer):
     datePosted = serializers.DateTimeField(format='%m-%d-%Y %H:%M:%S')

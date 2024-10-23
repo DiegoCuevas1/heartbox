@@ -11,8 +11,8 @@ export default function TimelinePostCard({ post }: { post: Post }) {
   const timeSincePost = getTimeSincePost(postDate);
 
   return (
-    <Link href={`/posts/${post.id}`}>
-      <div className="flex-col flex border-b-[1px] border-grayrgb">
+    <>
+      <div className="flex-col flex border-b-[1px] border-gray">
         <div className="flex items-center space-x-2 px-4 ">
           <Link href={`/profile/${post.user}`}>
             <Image
@@ -45,10 +45,10 @@ export default function TimelinePostCard({ post }: { post: Post }) {
             </div>
           </div>
         </div>
-        <p className="ml-16 flex pl-2 my-1">
-          <Link href={`posts/${post.id}`}>{post.message}</Link>
-        </p>
+        <Link href={`/posts/${post.id}`}>
+          <p className="ml-16 flex pl-2 my-1">{post.message}</p>
+        </Link>
       </div>
-    </Link>
+    </>
   );
 }

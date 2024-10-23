@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import ProfileTimeline from "./profileTimeline";
 import { User } from "@/app/types";
 import Image from "next/image";
+import Link from "next/link";
 
 async function getData(userId: string) {
   try {
@@ -55,6 +56,9 @@ export default function Profile({ params }: { params: { id: string } }) {
             className="h-12 rounded-full"
             style={{ objectFit: "cover" }}
           />
+          <button className="bg-links text-white px-1 mt-2 rounded-md hover:bg-links">
+            Edit Profile Picture
+          </button>
           {/* <Avatar className="w-24 h-24 mb-4">
             <AvatarImage src="/placeholder-user.jpg" alt="Profile Picture" />
             <AvatarFallback>CN</AvatarFallback>
@@ -62,9 +66,22 @@ export default function Profile({ params }: { params: { id: string } }) {
           {/* <Button className="bg-pink-700 text-white">EDIT PROFILE PICTURE</Button> */}
         </div>
         <div className="flex flex-col items-center">
-          <h2 className="text-xl font-loves font-bold">FRIENDS</h2>
-          <div className="w-full h-1 bg-links mt-1 " />
-          <p className="text-xl">0 friends</p>
+          <div>
+            <h2 className="text-xl text-center font-loves font-bold">
+              FRIENDS
+            </h2>
+            <div className="w-full h-1 bg-links mt-1 " />
+            <p className="text-xl font-semibold">0 friends</p>
+          </div>
+          <div>
+            <h2 className="text-xl text-center font-loves font-bold">
+              FAMILIES
+            </h2>
+            <div className="w-full h-1 bg-links mt-1 " />
+            <Link className="text-xl font-semibold" href={"/families"}>
+              {user?.families.length} families
+            </Link>
+          </div>
         </div>
       </div>
       <div className="flex w-full items-center justify-between mt-8">
