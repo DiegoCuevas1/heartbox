@@ -13,7 +13,7 @@ type MemberListProps = {
 };
 
 export default function MemberList({
-  members = [],
+  members,
   invite_code,
   id,
 }: MemberListProps) {
@@ -140,9 +140,7 @@ export default function MemberList({
         <div className="flex">
           {members && members?.length > 0 && (
             <Image
-              src={`https://dev-heartbox.s3.us-east-2.amazonaws.com/profile_pics/${
-                members?.at(0)?.profile_picture
-              }`}
+              src={"/images/families.png"}
               alt={""}
               className="h-12 rounded-full "
               style={{ objectFit: "cover" }}
@@ -152,9 +150,7 @@ export default function MemberList({
           )}
           {members && members?.length > 1 && (
             <Image
-              src={`https://dev-heartbox.s3.us-east-2.amazonaws.com/profile_pics/${
-                members?.at(1)?.profile_picture
-              }`}
+              src={`/images/families.png`}
               alt={""}
               className="h-12 rounded-full "
               style={{ objectFit: "cover" }}
@@ -164,9 +160,7 @@ export default function MemberList({
           )}
           {members && members?.length > 2 && (
             <Image
-              src={`https://dev-heartbox.s3.us-east-2.amazonaws.com/profile_pics/${
-                members?.at(2)?.profile_picture
-              }`}
+              src={`/images/families.png`}
               alt={""}
               className="h-12 rounded-full "
               style={{ objectFit: "cover" }}
@@ -186,7 +180,7 @@ export default function MemberList({
             </Link>
           </p>
         ) : (
-          <></>
+          <button>Copy Invite Code</button>
         )}
       </div>
     </>

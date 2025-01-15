@@ -10,7 +10,9 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.0/ref/settings/
 """
 import os
-
+import cloudinary
+import cloudinary.uploader
+import cloudinary.api
 # from dotenv import load_dotenv
 from pathlib import Path
 
@@ -52,7 +54,9 @@ INSTALLED_APPS = [
     'allauth',
     'allauth.account',
     'allauth.socialaccount',
-    'allauth.socialaccount.providers.google'
+    'allauth.socialaccount.providers.google',
+    'cloudinary',
+    'cloudinary_storage',
 ]
 
 SOCIALACCOUNT_PROVIDERS={
@@ -179,7 +183,7 @@ REST_FRAMEWORK = {
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'America/New_York'
 
 USE_I18N = True
 
@@ -198,11 +202,12 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 AUTH_USER_MODEL = 'api.UserProfile'
 
-DEFAULT_FILE_STORAGE = "storages.backends.s3.S3Storage"
-AWS_S3_ACCESS_KEY_ID= os.getenv('AWS_S3_ACCESS_KEY_ID')
-AWS_S3_SECRET_ACCESS_KEY= os.getenv('AWS_S3_SECRET_ACCESS_KEY')
-AWS_STORAGE_BUCKET_NAME = 'dev-heartbox'
-AWS_S3_REGION_NAME = 'us-east-2'
+CLOUDINARY_STORAGE = {
+    'CLOUD_NAME': os.getenv('CLOUDINARY_CLOUD_NAME'),
+    'API_KEY': os.getenv('CLOUDINARY_API_KEY'),
+    'API_SECRET': os.getenv('CLOUDINARY_API_SECRET')
+}
+DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 
 AUTHENTICATION_BACKENDS = (
     "django.contrib.auth.backends.ModelBackend",

@@ -30,7 +30,7 @@ const NavBar = () => {
 
   return (
     <nav>
-      <div className="flex fixed z-[1000] justify-around w-screen px-8 items-center h-28 bg-gradient-to-l from-[#4D94D0] via-[#4d80D0] to-[#4D94D0]">
+      {/* <div className="flex fixed z-[1000] justify-around w-screen px-8 items-center h-28 bg-gradient-to-l from-[#4D94D0] via-[#4d80D0] to-[#4D94D0] lg:hidden">
         <div className="flex w-12"></div>
         <div className="flex items-center">
           <Link
@@ -132,6 +132,9 @@ const NavBar = () => {
             </div>
           )}
         </div>
+      </div> */}
+      <div className="fixed top-0 w-full bg-[#c9cfe9] flex p-4">
+        <Image src={"/images/icon-blue.png"} alt={""} width={75} height={50} />
       </div>
     </nav>
   );

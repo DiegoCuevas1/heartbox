@@ -3,8 +3,8 @@ import json
 import os
 from uuid import UUID
 import uuid
-import boto3
 from botocore.exceptions import ClientError
+import cloudinary
 from django.shortcuts import get_object_or_404, render
 from django.utils import timezone
 from django.contrib.auth import authenticate, get_user_model, login, logout
@@ -82,22 +82,13 @@ def user_signup(request):
 
 
         
+        cloudinary_url = None
         if profile_pic:
-            file_extension = os.path.splitext(profile_pic.name)[1]  # Get file extension
-            unique_filename = str(uuid.uuid4()) + file_extension  # Generate unique filename
-
             try:
-                s3_client = boto3.client('s3',
-                                         aws_access_key_id=settings.AWS_S3_ACCESS_KEY_ID,
-                                         aws_secret_access_key=settings.AWS_S3_SECRET_ACCESS_KEY,
-                                         region_name=settings.AWS_S3_REGION_NAME
-                                         )
-                bucket_name = settings.AWS_STORAGE_BUCKET_NAME
-                folder_name = 'profile_pics'  # Specify the folder name here
-                key = f'{folder_name}/{unique_filename}'  # Concatenate folder name with unique filename
-                s3_client.upload_fileobj(profile_pic, bucket_name, key)
-            except ClientError as e:
-                return Response(str(e), status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                upload_result = cloudinary.uploader.upload(profile_pic)
+                cloudinary_url = upload_result.get('public_id')
+            except Exception as e:
+                return Response(f"Error uploading image to Cloudinary: {str(e)}", status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         user = db.objects.create_user(
             email=email,
@@ -106,7 +97,7 @@ def user_signup(request):
             birthdate=birthdate,
             pin=pin,
             password=password,
-            profile_picture=unique_filename if profile_pic else None  # Assign unique filename if profile pic exists
+            profile_picture=cloudinary_url # Assign unique filename if profile pic exists
         )
         user.save()
         return Response("User signup was successful", status=status.HTTP_200_OK)
@@ -167,28 +158,21 @@ def family(request):
     if request.method == 'POST':
         family_pic = request.FILES.get('family_picture')
         
-        if family_pic:
-            file_extension = os.path.splitext(family_pic.name)[1] 
-            unique_filename = str(uuid.uuid4()) + file_extension  
-           
+        if family_pic:  # Check if an image was provided in the request
             try:
-                s3_client = boto3.client('s3',
-                                         aws_access_key_id=settings.AWS_S3_ACCESS_KEY_ID,
-                                         aws_secret_access_key=settings.AWS_S3_SECRET_ACCESS_KEY,
-                                         region_name=settings.AWS_S3_REGION_NAME
-                                         )
-                bucket_name = settings.AWS_STORAGE_BUCKET_NAME
-                folder_name = 'family_pics'  # Specify the folder name here
-                key = f'{folder_name}/{unique_filename}'  # Concatenate folder name with unique filename
-                s3_client.upload_fileobj(family_pic, bucket_name, key)
-            except ClientError as e:
-                return Response(str(e), status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-            
+                uploaded_image = cloudinary.uploader.upload(family_pic,folder='family_pictures')  # Upload image to Cloudinary
+                unique_filename = uploaded_image.get('public_id')  # Retrieve the URL of the uploaded image
+                if not unique_filename:
+                    return Response("Failed to get image URL", status=status.HTTP_400_BAD_REQUEST)
+            except cloudinary.exceptions.Error as e:
+                return Response(f"Cloudinary upload failed: {str(e)}", status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        else:
+            unique_filename = None
         family = Family.objects.create_family(
             family_name=request.data['family_name'],
             family_description=request.data['family_description'],
             creator = request.user,
-            family_picture= unique_filename if family_pic else None
+            family_picture= unique_filename if family_pic else 'family_pictures/families'
         )
         # Add the current user to the family members
         request.user.add_to_family(family)
@@ -207,17 +191,24 @@ def getMembersOfFamily(request):
         if family_id:
             # If familyId is provided, filter the families based on the ID
             try:
-                user_families = Family.objects.filter(id=family_id, members=request.user)
-                serializer = FamilySerializer(user_families, many=True, context={'request': request})
-                if serializer.data == []:
+                user_family = Family.objects.get(id=family_id, members=request.user)
+                # Use the FamilySerializer to include members
+                serializer = FamilySerializer(user_family, context={'request': request})
+                
+                # Access the members directly from the serialized data
+                members = serializer.data.get('members')
+                
+                if not members:
                     return Response('Family Does Not Exist', status=400)
-                return Response(serializer.data['members'], status=200)
-
+                
+                return Response(members, status=200)
+            
+            except Family.DoesNotExist:
+                return Response('Family Does Not Exist', status=400)
             except ValueError:
                 return Response("Invalid familyId format", status=400)
         
-        return Response('it works',status=200)
-
+        return Response('Family ID is required', status=400)
 
 @api_view(['POST'])
 @authentication_classes([SessionAuthentication,BasicAuthentication])

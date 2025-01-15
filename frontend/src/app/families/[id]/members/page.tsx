@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { User } from "@/app/types/user";
 import { Family } from "@/app/types";
+import Link from "next/link";
 
 async function getData(familyId: string) {
   try {
@@ -27,7 +28,7 @@ async function getData(familyId: string) {
   }
 }
 export default function Members({ params }: { params: { id: string } }) {
-  const [data, setData] = useState<Family>();
+  const [data, setData] = useState<User[]>();
   const router = useRouter();
 
   useEffect(() => {
@@ -35,7 +36,7 @@ export default function Members({ params }: { params: { id: string } }) {
       try {
         const fetchedData = await getData(params.id);
         // Process data or set it to state as needed
-        setData(fetchedData[0]);
+        setData(fetchedData);
       } catch (error: any) {
         console.error("Error in fetchData:", error.message);
         router.push("/families");
@@ -44,5 +45,28 @@ export default function Members({ params }: { params: { id: string } }) {
     fetchData();
   }, [router, params.id]);
 
-  return <div className="flex"></div>;
+  return (
+    <div className="flex">
+      {data && data.length > 0 ? (
+        data.map((user) => (
+          <div key={user.id} className="flex items-center space-x-4">
+            <img
+              src={"/images/default_profpic.png"}
+              alt={`${user.first_name} ${user.last_name}'s Profile`}
+              className="w-12 h-12 rounded-full object-cover"
+            />
+            <div>
+              <Link href={`/profile/${user.id}`}>
+                <h2 className="font-bold">
+                  {user.first_name} {user.last_name}
+                </h2>
+              </Link>
+            </div>
+          </div>
+        ))
+      ) : (
+        <p>No members found.</p>
+      )}
+    </div>
+  );
 }

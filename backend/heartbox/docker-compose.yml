@@ -1,4 +1,3 @@
-
 services:
   web:
     build: .
@@ -11,10 +10,6 @@ services:
     restart: always
     environment:
       DJANGO_WATCHMAN_TIMEOUT: 20
-    
-
-  
-   
   my-postgres:
     image: postgres
     environment:

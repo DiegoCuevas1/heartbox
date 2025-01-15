@@ -4,8 +4,6 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 import { setSignIn, setSignOut } from "@/utils/NavAuthToggle";
 import toast from "react-hot-toast";
 
-
-
 type UserProviderType = {
   userId: string;
   setUserId: React.Dispatch<React.SetStateAction<string>>;
@@ -46,7 +44,7 @@ export const UserContextProvider = ({
           credentials: "include",
           next: { revalidate: 0 },
         });
-  
+
         const data = await res.json();
         if (res.ok) {
           // this is because a valid response (200) can also be sent if even the user is not signed in
@@ -55,25 +53,23 @@ export const UserContextProvider = ({
             setUserId(user.id);
             setUserFN(user.f_name);
             setUserLN(user.l_name);
-            setProfilePic(user.profilePic)
+            setProfilePic(user.profilePic);
             setAuthStatus(true);
 
-            localStorage.setItem('userId', user.id);
-            localStorage.setItem('userFN', user.f_name);
-            localStorage.setItem('userLN', user.l_name);
-            localStorage.setItem('profilePic',user.profilePic)
-            localStorage.setItem('authStatus', 'true');
+            localStorage.setItem("userId", user.id);
+            localStorage.setItem("userFN", user.f_name);
+            localStorage.setItem("userLN", user.l_name);
+            localStorage.setItem("profilePic", user.profilePic);
+            localStorage.setItem("authStatus", "true");
           }
-        
         } else {
           toast.error(res.statusText);
-         
         }
-      } catch (error:any) {
-        console.error('Error:', error.message);
+      } catch (error: any) {
+        console.error("Error:", error.message);
       }
     };
-  
+
     // Immediately invoke the asynchronous function
     (async () => {
       await checkLogin();
@@ -84,11 +80,11 @@ export const UserContextProvider = ({
       setUserId("");
       setUserFN("");
       setUserLN("");
-      setProfilePic("")
+      setProfilePic("");
       setAuthStatus(false);
     });
   }, []);
-  
+
   const providerVal: UserProviderType = {
     userId,
     setUserId,

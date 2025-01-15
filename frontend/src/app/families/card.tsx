@@ -7,7 +7,7 @@ export default function Card({ family }: { family: Family }) {
     <Link href={`/families/${family.id}`}>
       <div className="flex justify-center items-center flex-col hover:scale-125 transition-all">
         <Image
-          src="/images/families.png"
+          src={`https://res.cloudinary.com/dcyk5quni/${family.family_picture}`}
           width={100}
           height={100}
           alt={`Family ${family.id}`}

@@ -8,6 +8,7 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
+from cloudinary.models import CloudinaryField
 
 class UserProfileManager(BaseUserManager):
     def create_user(self, email, first_name, last_name, birthdate, pin, password=None,profile_picture=None,):
@@ -35,7 +36,7 @@ class UserProfile(AbstractBaseUser, PermissionsMixin):
     first_name = models.CharField(_('firstName'), max_length=100)   
     birthdate = models.DateField(_('birthdate'), blank=True, null=True)
     pin = models.CharField(_('PIN'), max_length=100)
-    profile_picture = models.CharField('profile picture', max_length=255, default='default_profpic.png')
+    profile_picture = models.CharField('profile picture', max_length=255, default='profile_pictures/default_prof')
     posts = models.ManyToManyField('Post', related_name='user_posts', related_query_name='user_post')
     liked = models.ManyToManyField('Post', related_name='liked_by', blank=True)
     is_staff = models.BooleanField(_('staff status'), default=False)
@@ -101,9 +102,12 @@ class Family(models.Model):
     family_description = models.CharField(max_length=500,blank=True)
     invite_code = models.CharField(max_length=50, unique=True)
     members = models.ManyToManyField(get_user_model(), related_name='user_families')
-    posts = models.ManyToManyField('Post', related_name='family_posts', related_query_name='family_post')
-    family_picture = models.CharField('Family Picture', max_length=255, default='families.png')
+    posts = models.ManyToManyField('Post', related_name='family_posts', related_query_name='family_post',blank=True, null=True)
+    family_picture = CloudinaryField('family_picture',blank=True,null=True,folder='family_pictures')
     objects = FamilyManager()
+
+    class Meta:
+        verbose_name_plural = "families"
 
 
 class PostManager(models.Manager):

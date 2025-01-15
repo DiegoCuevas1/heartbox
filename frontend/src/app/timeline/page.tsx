@@ -52,7 +52,7 @@ export default function Timeline() {
             </div>
           ))}
         {posts && posts?.length === 0 && (
-          <div className="flex-col flex items-center justify-center mt-24">
+          <div className="flex-col flex items-center justify-center">
             <Image
               src={"/images/family_heartbox.png"}
               alt={""}

@@ -6,7 +6,8 @@ import { UserContextProvider } from "@/context/AuthContext";
 import NavBar from "@/components/layout/navbar";
 import BottomNavBar from "@/components/layout/bottom-nav";
 import React from "react";
-import Head from "next/head";
+import Sidebar from "@/components/layout/right-sidebar";
+import LeftSideBar from "@/components/layout/left-sidebar";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -22,13 +23,6 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <Head>
-        <title>HeartBox App</title>
-        <meta
-          name="description"
-          content="created by Diego Cuevas, Rob Mantovani, Kyle Mantovani"
-        />
-      </Head>
       <body className={`bg-main ${inter.className}`}>
         <Toaster
           position="top-left"
@@ -54,7 +48,12 @@ export default function RootLayout({
         />
         <UserContextProvider>
           <NavBar />
-          <div className="pt-28">{children}</div>
+          <div className="lg:flex mt-24">
+            <LeftSideBar />
+            <div className="flex-1 flex justify-center mt-8">{children}</div>
+            <Sidebar />
+          </div>
+
           <BottomNavBar />
         </UserContextProvider>
       </body>

@@ -10,7 +10,7 @@ const BottomNavBar = () => {
   }
 
   return (
-    <div className="flex w-screen h-24 bg-[#b8d4ec] fixed bottom-0 z-[1] justify-around items-center">
+    <div className="flex w-screen h-24 bg-[#b8d4ec] fixed bottom-0 z-[1] justify-around items-center lg:hidden">
       <Link href={"/timeline"}>
         <Image
           src="/images/heartbox_logo.png"

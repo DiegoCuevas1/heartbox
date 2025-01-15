@@ -24,8 +24,9 @@ async function getData() {
 }
 export default function NotificationGenerator() {
   const [notifications, setNotifications] = useState<NotificationType[]>();
-
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   useEffect(() => {
+    setIsLoading(true);
     async function fetchData() {
       try {
         const fetchedData = await getData();
@@ -33,6 +34,8 @@ export default function NotificationGenerator() {
         setNotifications(fetchedData);
       } catch (error: any) {
         console.error("Error in fetchData:", error.message);
+      } finally {
+        setIsLoading(false);
       }
     }
     fetchData();
@@ -49,6 +52,14 @@ export default function NotificationGenerator() {
   //         profile_picture:'default_profpic.png'
   //     }
   // }
+  if (isLoading) {
+    return (
+      <div className="flex min-h-[80vw] items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-links"></div>
+      </div>
+    );
+  }
+
   return (
     <>
       <div className="flex-col space-y-4">
@@ -63,11 +74,7 @@ export default function NotificationGenerator() {
           No Notifications yet...
         </div>
       )}
-      {!notifications && (
-        <div className="flex justify-center text-links text-xl font-loves font-bold">
-          No Notifications yet...
-        </div>
-      )}
+
       {/* <Notification notification={notification}/> */}
     </>
   );

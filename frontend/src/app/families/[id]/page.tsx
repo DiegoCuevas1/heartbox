@@ -91,7 +91,7 @@ export default function Page({ params }: { params: { id: string } }) {
               {data?.family_name}
             </h2>
             <Image
-              src="/images/families.png"
+              src={`https://res.cloudinary.com/dcyk5quni/${data?.family_picture}`}
               width={250}
               height={100}
               alt={`Selected Heartbox Picture`}
@@ -101,6 +101,7 @@ export default function Page({ params }: { params: { id: string } }) {
                   {data?.family_name} 
                 </h2> */}
           </div>
+
           <MemberList
             id={data?.id}
             members={data?.members}

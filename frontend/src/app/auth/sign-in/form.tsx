@@ -29,8 +29,6 @@ function FormComponent() {
       });
       const res_msg = await res.text();
       if (res.ok) {
-        navSignIn();
-
         setTimeout(() => {
           window.location.href = "/families";
         }, 400);
