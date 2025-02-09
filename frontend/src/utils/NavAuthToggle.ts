@@ -1,15 +1,29 @@
-let navSignIn: (() => void) | null = null;
-let navSignOut: (() => void) | null = null;
+type AuthFunction = () => void;
 
-export function setSignIn(func: () => void) {
+let navSignIn: AuthFunction | null = null;
+let navSignOut: AuthFunction | null = null;
+
+/**
+ * Sets the sign-in function to be triggered globally
+ * @param func The function to be called when sign-in is triggered
+ */
+export function setSignIn(func: AuthFunction): void {
   navSignIn = func;
 }
 
-export function setSignOut(func: () => void) {
+/**
+ * Sets the sign-out function to be triggered globally
+ * @param func The function to be called when sign-out is triggered
+ */
+export function setSignOut(func: AuthFunction): void {
   navSignOut = func;
 }
 
-export function triggerSignIn() {
+/**
+ * Triggers the global sign-in function if it has been set
+ * @throws Console error if sign-in function is not set
+ */
+export function triggerSignIn(): void {
   if (navSignIn) {
     navSignIn();
   } else {
@@ -17,12 +31,14 @@ export function triggerSignIn() {
   }
 }
 
-export function triggerSignOut() {
+/**
+ * Triggers the global sign-out function if it has been set
+ * @throws Console error if sign-out function is not set
+ */
+export function triggerSignOut(): void {
   if (navSignOut) {
     navSignOut();
   } else {
     console.error("SignOut function is not set.");
   }
 }
-
-export { navSignIn, navSignOut };

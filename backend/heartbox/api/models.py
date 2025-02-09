@@ -42,7 +42,13 @@ class UserProfile(AbstractBaseUser, PermissionsMixin):
     is_staff = models.BooleanField(_('staff status'), default=False)
     objects = UserProfileManager()
     families = models.ManyToManyField('Family', related_name='family_members',related_query_name="family_member")
-
+    connections = models.ManyToManyField(
+        'self',
+        through='Connection',
+        through_fields=('from_user', 'to_user'),
+        symmetrical=False,
+        related_name='connected_to'
+    )
 
     
     USERNAME_FIELD = 'email'
@@ -64,8 +70,66 @@ class UserProfile(AbstractBaseUser, PermissionsMixin):
 
     def remove_from_posts(self,post):
         self.posts.remove(post)
-   
+    
+    def get_connection_status(self, other_user):
+        connection = self.connections_from.filter(to_user=other_user).first()
+        if connection:
+            return connection.status  # This will return 'PENDING', 'ACCEPTED', or 'DECLINED'
+        return 'none'
 
+
+class Connection(models.Model):
+    RELATIONSHIP_CHOICES = [
+        ('FRIEND', 'Friend'),
+        ('FAMILY', 'Family'),
+        ('COLLEAGUE', 'Colleague'),
+        ('OTHER', 'Other'),
+    ]
+
+    from_user = models.ForeignKey(
+        'UserProfile',
+        on_delete=models.CASCADE,
+        related_name='connections_from'
+    )
+    to_user = models.ForeignKey(
+        'UserProfile', 
+        on_delete=models.CASCADE,
+        related_name='connections_to'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    status = models.CharField(
+        max_length=20,
+        choices=[
+            ('PENDING', 'Pending'),
+            ('ACCEPTED', 'Accepted'),
+            ('DECLINED', 'Declined')
+        ],
+        default='PENDING'
+    )
+    relationship_type = models.CharField(
+        max_length=20,
+        choices=RELATIONSHIP_CHOICES,
+        default='FRIEND'
+    )
+
+    class Meta:
+        unique_together = ('from_user', 'to_user')
+        indexes = [
+            models.Index(fields=['from_user', 'status']),
+            models.Index(fields=['to_user', 'status'])
+        ]
+    def accept(self):
+        self.status = 'ACCEPTED'
+        self.save()
+
+    def decline(self):
+        self.status = 'DECLINED'
+        self.save()
+
+
+    def __str__(self):
+        return f"{self.from_user} -> {self.to_user} ({self.status}, {self.relationship_type})"
 
 class FamilyManager(models.Manager):
     def create_family(self, family_name, family_description, creator, family_picture=None):
@@ -103,7 +167,7 @@ class Family(models.Model):
     invite_code = models.CharField(max_length=50, unique=True)
     members = models.ManyToManyField(get_user_model(), related_name='user_families')
     posts = models.ManyToManyField('Post', related_name='family_posts', related_query_name='family_post',blank=True, null=True)
-    family_picture = CloudinaryField('family_picture',blank=True,null=True,folder='family_pictures')
+    family_picture = models.CharField('family_picture',blank=True,null=True,)
     objects = FamilyManager()
 
     class Meta:
@@ -193,6 +257,7 @@ class Notification(models.Model):
             ('GROUP_JOIN', 'Group Join'),
             ('POST_MENTION', 'Post Mention'),
             ('GROUP_INVITATION', 'Group Invitation'),
+            ('CONNECTION_REQUEST','Connection Request'),
             # Add more notification types as needed
         )
     id = models.AutoField(primary_key=True)

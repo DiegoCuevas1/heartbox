@@ -2,17 +2,21 @@
 import { useUserContext } from "@/context/AuthContext";
 import Link from "next/link";
 import Image from "next/image";
-import { FaAngleDown } from "react-icons/fa";
+import { FaAngleDown, FaBell, FaEllipsisH, FaHeart, FaHome, FaUser } from "react-icons/fa";
 import { useEffect, useRef, useState } from "react";
 import getCSRF from "@/utils/cookie";
 import toast from "react-hot-toast";
 import { sanitize_res_msg } from "@/utils/utilFunctions";
 import { redirect } from "next/navigation";
 import Logout from "../logoutbtn";
+import { usePathname } from 'next/navigation';
+
 export default function LeftSideBar() {
   const [isDropdownVisible, setIsDropdownVisible] = useState<boolean>(false);
-  const { userId, authStatus } = useUserContext();
+  const { user, isAuthenticated } = useUserContext();
   const menuRef = useRef<HTMLDivElement | null>(null);
+  const pathname = usePathname();
+
   const handleClickOutside = (event: MouseEvent) => {
     if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
       setIsDropdownVisible(false);
@@ -30,7 +34,7 @@ export default function LeftSideBar() {
     };
   }, [isDropdownVisible]);
 
-  if (!authStatus) return null;
+  if (!isAuthenticated) return null;
 
   const onDropDownClick = () => {
     setIsDropdownVisible((prev) => !prev);
@@ -59,50 +63,84 @@ export default function LeftSideBar() {
 
   return (
     <div className="fixed left-0 w-64 mt-2 h-screen bg-gradient-to-b from-transparent to-[#b1bbdf] p-4  hidden lg:flex flex-col items-center space-y-6">
-      <div className="flex flex-col items-center bg-blue-200 p-4 rounded-full">
+      <Link
+        href={`/profile/${user?.id}`}
+        className="flex items-center group hover:text-blue-500 space-x-2"
+      >
         <Image
-          src="/images/icon-blue.png"
-          alt="Heartbox Logo"
-          className="w-16 h-16"
-          width={50}
-          height={50}
+          src={`https://res.cloudinary.com/dcyk5quni/${user?.profile_picture}`}
+          alt={"Profile Picture"}
+          width={100}
+          height={100}
+          className="w-16 h-16 rounded-full border-2 border-gray-300 group-hover:border-blue-500" // Optional: Make the image round
         />
-      </div>
+        <div className="flex items-center space-x-2 ">
+          <h3 className="text-xl font-semibold mt-2">
+            {user?.first_name} {user?.last_name}
+          </h3>
+        </div>
+      </Link>
+
       <div className="w-full h-1 rounded-md bg-gradient-to-t from-transparent  via-gray-400 to-transparent"></div>
-      <nav className="w-full">
-        <ul className="flex flex-col font-bold text-center text-gray-900 space-y-4 text-lg">
+      <nav className="w-full px-8">
+        <ul className="flex flex-col font-bold text-gray-900 space-y-5 text-xl">
           <li>
-            <Link href="/timeline" className="hover:text-blue-500">
-              Home
+            <Link 
+              href="/timeline" 
+              className={`hover:text-blue-500 flex items-center space-x-3 ${
+                pathname === '/timeline' ? 'text-blue-800' : ''
+              }`}
+            >
+              <FaHome className="text-2xl" />
+              <span>Home</span>
             </Link>
           </li>
           <li>
-            <Link href="/families" className="hover:text-blue-500">
-              Heartboxes
+            <Link 
+              href="/families" 
+              className={`hover:text-blue-500 flex items-center space-x-3 ${
+                pathname === '/families' ? 'text-blue-800' : ''
+              }`}
+            >
+              <FaHeart className="text-2xl" />
+              <span>Heartboxes</span>
             </Link>
           </li>
           <li>
-            <Link href="/notifications" className="hover:text-blue-500">
-              Notifications
+            <Link 
+              href="/notifications" 
+              className={`hover:text-blue-500 flex items-center space-x-3 ${
+                pathname === '/notifications' ? 'text-blue-800' : ''
+              }`}
+            >
+              <FaBell className="text-2xl" />
+              <span>Notifications</span>
             </Link>
           </li>
           <li>
-            <Link href={`/profile/${userId}`} className="hover:text-blue-500">
-              Profile
+            <Link 
+              href={`/profile/${user?.id}`} 
+              className={`hover:text-blue-500 flex items-center space-x-3 ${
+                pathname.startsWith('/profile') ? 'text-blue-800' : ''
+              }`}
+            >
+              <FaUser className="text-2xl" />
+              <span>Profile</span>
             </Link>
           </li>
-          <li className="relative mx-auto">
+          <li className="relative">
             <button
               onClick={onDropDownClick}
-              className="flex items-center space-x-1"
+              className="flex items-center space-x-3 hover:text-blue-500"
             >
+              <FaEllipsisH className="text-2xl" />
               <span>More</span>
               <FaAngleDown />
             </button>
             {isDropdownVisible && (
               <div
                 ref={menuRef}
-                className="absolute top-full w-36 mt-1 left-[-40px] bg-white shadow-lg border rounded"
+                className="absolute top-full w-32 text-gray-900 mt-1 left-0 pb-2 bg-white shadow-lg border rounded"
               >
                 <ul className="py-2">
                   <Link href={""}>

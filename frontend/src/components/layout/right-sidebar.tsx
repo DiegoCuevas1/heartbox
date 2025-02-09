@@ -11,11 +11,11 @@ import { BiPlus } from "react-icons/bi";
 import Link from "next/link";
 
 const Sidebar = () => {
-  const { userId, userFN, userLN, profilePic, authStatus } = useUserContext();
+  const { user, isAuthenticated } = useUserContext();
   const [data, setData] = useState<Family[] | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   useEffect(() => {
-    if (authStatus) {
+    if (isAuthenticated) {
       const fetchFamilies = async () => {
         try {
           const response = await fetch(
@@ -41,9 +41,9 @@ const Sidebar = () => {
 
       fetchFamilies();
     }
-  }, [authStatus]);
+  }, [isAuthenticated]);
 
-  if (!authStatus) {
+  if (!isAuthenticated) {
     return null; // Don't render the sidebar if not authenticated
   }
 
@@ -57,23 +57,13 @@ const Sidebar = () => {
       >
         <div className="mt-12 flex flex-col items-center">
           {/* Center the content */}
-          <Link
-            href={`/profile/${userId}`}
-            className="flex-col flex items-center"
-          >
-            <Image
-              src={`https://res.cloudinary.com/dcyk5quni/${profilePic}`}
-              alt={"Profile Picture"}
-              width={100}
-              height={100}
-              className="rounded-full" // Optional: Make the image round
-            />
-            <div className="flex items-center space-x-2 ">
-              <h3 className="text-xl font-semibold mt-2">
-                {userFN} {userLN}
-              </h3>
-            </div>
-          </Link>
+          <Image
+            src="/images/icon-blue.png"
+            alt="Heartbox Logo"
+            className="w-16 h-16"
+            width={50}
+            height={50}
+          />
         </div>
         {/* Sidebar content */}
         <div className="flex flex-col items-center mt-3">

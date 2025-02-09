@@ -30,6 +30,7 @@ async function getData(familyId: string) {
 }
 export default function Page({ params }: { params: { id: string } }) {
   const [data, setData] = useState<Family>();
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const router = useRouter();
 
   useEffect(() => {
@@ -38,6 +39,7 @@ export default function Page({ params }: { params: { id: string } }) {
         const fetchedData = await getData(params.id);
         // Process data or set it to state as needed
         setData(fetchedData[0]);
+        setIsLoading(false);
       } catch (error: any) {
         console.error("Error in fetchData:", error.message);
         router.push("/families");
@@ -45,6 +47,14 @@ export default function Page({ params }: { params: { id: string } }) {
     }
     fetchData();
   }, [router, params.id]);
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-links"></div>
+      </div>
+    );
+  }
 
   // const leaveFamily = async () =>
   // {

@@ -22,7 +22,7 @@ from rest_framework import status
 
 from website import settings
 
-from .models import Family, Notification, UserProfile, Post
+from .models import Family, Notification, UserProfile, Post, Connection
 from .serializers import FamilySerializer, NotificationSerializer, UserProfileSerializer, PostSerializer
 from .utils import is_name_valid
 
@@ -461,7 +461,7 @@ def post(request):
 @permission_classes([IsAuthenticated])
 def get_user_details(request):
     user_id = request.GET.get('userId')  # Extract userId from query parameters
-
+    
     if not user_id:
         return Response({"error": "userId query parameter is required"}, status=400)
 
@@ -474,13 +474,8 @@ def get_user_details(request):
     try:
         # Fetch the user by UUID
         user = UserProfile.objects.get(id=user_id)
-        
-        # Serialize the user data
-        user_serialized = UserProfileSerializer(user, context={'request': request})
-        
-        # Return serialized user details in the response
-        return Response(user_serialized.data, status=200)
-    
+        serializer = UserProfileSerializer(user, context={'request': request})
+        return Response(serializer.data, status=200)
     except UserProfile.DoesNotExist:
         return Response({"error": "User not found"}, status=404)
 
@@ -560,3 +555,100 @@ def notification_count(request):
         notification_count = Notification.objects.filter(recipient_id=request.user.id).count()
         return Response({'count': notification_count}, status=status.HTTP_200_OK)
     return Response('Invalid Method Request', status=status.HTTP_403_FORBIDDEN)
+
+
+@api_view(['GET'])
+@authentication_classes([SessionAuthentication,BasicAuthentication])
+@permission_classes([IsAuthenticated])
+def connections(request):
+    if request.method == 'GET':
+        user = request.user  # This should be an instance of UserProfile# Retrieve connections where the user is the initiator (from_user)
+        outgoing_connections = user.connections.all()
+        incoming_connections = user.connected_to.all()
+
+        all_connections = (outgoing_connections | incoming_connections).distinct()
+
+        serializer = UserProfileSerializer(all_connections, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
+@api_view(['POST'])
+@authentication_classes([SessionAuthentication, BasicAuthentication])
+@permission_classes([IsAuthenticated])
+def send_connection_request(request):
+    data = request.data
+    to_user_id = data.get('userId')  # The user ID to whom the connection request is sent
+
+    if not to_user_id:
+        return Response({"error": "userId is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        to_user = UserProfile.objects.get(id=to_user_id)
+    except UserProfile.DoesNotExist:
+        return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    # Check if a connection already exists
+    existing_connection = Connection.objects.filter(from_user=request.user, to_user=to_user).first()
+    if existing_connection:
+        if existing_connection.status == 'PENDING':
+            return Response({"message": "Connection request already sent."}, status=status.HTTP_400_BAD_REQUEST)
+        elif existing_connection.status == 'ACCEPTED':
+            return Response({"message": "You are already connected."}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Create a new connection request
+    connection = Connection.objects.create(from_user=request.user, to_user=to_user, status='PENDING')
+    Notification.objects.create_notif(
+        notification_type='CONNECTION_REQUEST',
+        sender=request.user,
+        recipient=to_user,
+        )
+    return Response({"message": "Connection request sent."}, status=status.HTTP_201_CREATED)
+
+@api_view(['PATCH'])
+@authentication_classes([SessionAuthentication, BasicAuthentication])
+@permission_classes([IsAuthenticated])
+def respond_to_connection_request(request):
+    data = request.data
+    connection_id = data.get('connectionId')  # The ID of the connection to respond to
+    action = data.get('action')  # Either 'accept' or 'decline'
+
+    if not connection_id or not action:
+        return Response({"error": "connectionId and action are required"}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        connection = Connection.objects.get(id=connection_id)
+        
+    except Connection.DoesNotExist:
+        return Response({"error": "Connection not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    if action == 'accept':
+        connection.accept()  # Call the accept method to update the status
+        return Response({"message": "Connection request accepted."}, status=status.HTTP_200_OK)
+    elif action == 'decline':
+        connection.decline()  # Call the decline method to update the status
+        return Response({"message": "Connection request declined."}, status=status.HTTP_200_OK)
+    else:
+        return Response({"error": "Invalid action. Use 'accept' or 'decline'."}, status=status.HTTP_400_BAD_REQUEST)
+    
+@api_view(['POST'])
+@authentication_classes([SessionAuthentication, BasicAuthentication])
+@permission_classes([IsAuthenticated])
+def cancel_connection_request(request):
+    data = request.data
+    to_user_id = data.get('userId')  # The user ID to whom the connection request was sent
+
+    if not to_user_id:
+        return Response({"error": "userId is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        to_user = UserProfile.objects.get(id=to_user_id)
+    except UserProfile.DoesNotExist:
+        return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    # Check if a pending connection request exists
+    existing_connection = Connection.objects.filter(from_user=request.user, to_user=to_user, status='PENDING').first()
+    if not existing_connection:
+        return Response({"error": "No pending connection request found."}, status=status.HTTP_404_NOT_FOUND)
+
+    # Cancel the connection request
+    existing_connection.delete()  # Or you can set the status to 'CANCELLED' if you want to keep a record
+    return Response({"message": "Connection request canceled."}, status=status.HTTP_200_OK)

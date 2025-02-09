@@ -5,10 +5,10 @@ import { useUserContext } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 
 export default function Login() {
-  const { authStatus } = useUserContext();
+  const { isAuthenticated } = useUserContext();
   const router = useRouter();
-  if (authStatus) {
-    window.location.href = "/families";
+  if (isAuthenticated) {
+    router.push("/families");
   }
   return (
     <div className="flex-col h-screen bg-[#fde9f1]">

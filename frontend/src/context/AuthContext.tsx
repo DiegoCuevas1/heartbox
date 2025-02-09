@@ -3,99 +3,93 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { setSignIn, setSignOut } from "@/utils/NavAuthToggle";
 import toast from "react-hot-toast";
+import { User } from "@/app/types/user";
 
-type UserProviderType = {
-  userId: string;
-  setUserId: React.Dispatch<React.SetStateAction<string>>;
-  userFN: string;
-  setUserFN: React.Dispatch<React.SetStateAction<string>>;
-  userLN: string;
-  setUserLN: React.Dispatch<React.SetStateAction<string>>;
-  profilePic: string;
-  setProfilePic: React.Dispatch<React.SetStateAction<string>>; // Setter function for profile picture URL
-  authStatus: boolean;
-  setAuthStatus: React.Dispatch<React.SetStateAction<boolean>>;
-};
+interface AuthContextType {
+  user: User | null;
+  setUser: React.Dispatch<React.SetStateAction<User | null>>;
+  isAuthenticated: boolean;
+  isLoading: boolean;
+}
 
-const UserContext = createContext<UserProviderType | undefined>(undefined);
+const UserContext = createContext<AuthContextType | undefined>(undefined);
 
 export const useUserContext = () => {
   const context = useContext(UserContext);
-  if (!context) throw new Error("useUserContext not used in correct provider");
-
+  if (!context) throw new Error("useUserContext must be used within a UserContextProvider");
   return context;
 };
 
-export const UserContextProvider = ({
-  children,
-}: {
-  children: React.ReactNode;
-}) => {
-  const [userId, setUserId] = useState<string>("");
-  const [userFN, setUserFN] = useState<string>("");
-  const [userLN, setUserLN] = useState<string>("");
-  const [profilePic, setProfilePic] = useState<string>("");
-  const [authStatus, setAuthStatus] = useState<boolean>(false);
+export const UserContextProvider = ({ children }: { children: React.ReactNode }) => {
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const loadUserFromStorage = () => {
+    try {
+      const storedUser = localStorage.getItem('user');
+      if (storedUser) {
+        setUser(JSON.parse(storedUser));
+      }
+    } catch (error) {
+      console.error('Error loading user from storage:', error);
+    }
+  };
 
   useEffect(() => {
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+    
     const checkLogin = async () => {
       try {
-        const res = await fetch("http://localhost:8000/api/user/check-login", {
+        setIsLoading(true);
+        const res = await fetch(`${API_URL}/api/user/check-login`, {
           credentials: "include",
           next: { revalidate: 0 },
         });
 
         const data = await res.json();
-        if (res.ok) {
-          // this is because a valid response (200) can also be sent if even the user is not signed in
-          if (res.status === 202) {
-            const user = JSON.parse(data.data);
-            setUserId(user.id);
-            setUserFN(user.f_name);
-            setUserLN(user.l_name);
-            setProfilePic(user.profilePic);
-            setAuthStatus(true);
-
-            localStorage.setItem("userId", user.id);
-            localStorage.setItem("userFN", user.f_name);
-            localStorage.setItem("userLN", user.l_name);
-            localStorage.setItem("profilePic", user.profilePic);
-            localStorage.setItem("authStatus", "true");
-          }
+        
+        if (res.ok && res.status === 202) {
+          const userData = JSON.parse(data.data);
+          const user: User = {
+            id: userData.id,
+            first_name: userData.f_name, // Map from f_name to first_name
+            last_name: userData.l_name,  // Map from l_name to last_name
+            profile_picture: userData.profilePic, // Map from profilePic to profile_picture
+            families: userData.families || [] // Initialize empty array if not provided
+          };
+          
+          setUser(user);
+          localStorage.setItem('user', JSON.stringify(user));
         } else {
-          toast.error(res.statusText);
+          setUser(null);
+          localStorage.removeItem('user');
         }
-      } catch (error: any) {
-        console.error("Error:", error.message);
+      } catch (error) {
+        console.error("Error checking login:", error);
+        toast.error("Failed to check login status");
+      } finally {
+        setIsLoading(false);
       }
     };
 
-    // Immediately invoke the asynchronous function
-    (async () => {
-      await checkLogin();
-    })();
+    loadUserFromStorage(); // Load from localStorage first
+    checkLogin(); // Then verify with server
 
-    setSignIn(() => setAuthStatus(true));
+    setSignIn(() => {
+      // This will be handled by checkLogin updating the user state
+    });
+    
     setSignOut(() => {
-      setUserId("");
-      setUserFN("");
-      setUserLN("");
-      setProfilePic("");
-      setAuthStatus(false);
+      setUser(null);
+      localStorage.removeItem('user');
     });
   }, []);
 
-  const providerVal: UserProviderType = {
-    userId,
-    setUserId,
-    userFN,
-    setUserFN,
-    userLN,
-    setUserLN,
-    profilePic,
-    setProfilePic,
-    authStatus,
-    setAuthStatus,
+  const providerVal: AuthContextType = {
+    user,
+    setUser,
+    isAuthenticated: !!user,
+    isLoading,
   };
 
   return (

@@ -5,50 +5,54 @@ import Link from "next/link";
 import { IconContext } from "react-icons";
 import { FaRegHeart } from "react-icons/fa";
 import { getTimeSincePost } from "@/utils/utilFunctions";
+import { motion } from "framer-motion";
 
 export default function TimelinePostCard({ post }: { post: Post }) {
   const postDate = new Date(post.datePosted);
   const timeSincePost = getTimeSincePost(postDate);
 
   return (
-    <>
-      <div className="flex-col flex border-b-[1px] border-gray">
-        <div className="flex items-center space-x-2 px-4 ">
-          <Link href={`/profile/${post.user}`}>
-            <Image
-              src="/images/default_profpic.png"
-              width={50}
-              height={50}
-              alt={`${post.user_details.first_name} ${post.user_details.last_name}'s profile picture`}
-              className="h-12 rounded-full"
-              style={{ objectFit: "cover" }}
-            />
-          </Link>
-          <div className="flex justify-between">
-            <div className="flex-col ">
-              <h2 className={`flex`}>
-                <Link href={`/profile/${post.user}`}>
-                  {post.user_details.first_name} {post.user_details.last_name}
-                </Link>
-                <span className="ml-2 text-date">{timeSincePost}</span>
-              </h2>
-              <p className="text-secondary">
-                Posted in{" "}
-                <Link
-                  className="text-links font-bold"
-                  href={`/families/${post.family_details.id}`}
-                >
-                  {post.family_details.family_name}
-                </Link>{" "}
-                family
-              </p>
-            </div>
+    <motion.div
+      className="flex-col flex border-b-[1px] border-gray"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+    >
+      <div className="flex items-center space-x-2 px-4">
+        <Link href={`/profile/${post.user}`}>
+          <Image
+            src={`https://res.cloudinary.com/dcyk5quni/${post.user_details.profile_picture}`}
+            width={50}
+            height={50}
+            alt={`${post.user_details.first_name} ${post.user_details.last_name}'s profile picture`}
+            className="h-12 rounded-full"
+            style={{ objectFit: "cover" }}
+          />
+        </Link>
+        <div className="flex justify-between">
+          <div className="flex-col ">
+            <h2 className={`flex`}>
+              <Link href={`/profile/${post.user}`}>
+                {post.user_details.first_name} {post.user_details.last_name}
+              </Link>
+              <span className="ml-2 text-date">{timeSincePost}</span>
+            </h2>
+            <p className="text-secondary">
+              Posted in{" "}
+              <Link
+                className="text-links font-bold"
+                href={`/families/${post.family_details.id}`}
+              >
+                {post.family_details.family_name}
+              </Link>{" "}
+              family
+            </p>
           </div>
         </div>
-        <Link href={`/posts/${post.id}`}>
-          <p className="ml-16 flex pl-2 my-1">{post.message}</p>
-        </Link>
       </div>
-    </>
+      <Link href={`/posts/${post.id}`}>
+        <p className="ml-16 flex pl-2 my-1">{post.message}</p>
+      </Link>
+    </motion.div>
   );
 }

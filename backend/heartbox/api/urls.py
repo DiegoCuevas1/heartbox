@@ -19,5 +19,9 @@ urlpatterns = [
     path('user/notifications',views.notification,name='notifications'),
     path("user/notifications/<int:notificationId>/", views.notification, name="notification_detail"),
     path('user/notifications/count', views.notification_count, name='notification_count'),
-    path('user/users',views.get_user_details,name="user_details_by_id")
+    path('user/users',views.get_user_details,name="user_details_by_id"),
+    path('user/connections', views.connections, name="connections"),
+    path('connections/request', views.send_connection_request, name='send_connection_request'),
+    path('connections/respond', views.respond_to_connection_request, name='respond_to_connection_request'),
+    path('connections/cancel', views.cancel_connection_request, name='cancel_connection_request'),
 ]

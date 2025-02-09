@@ -1,11 +1,8 @@
 "use client";
-import { Family } from "@/app/types";
 import { Post } from "@/app/types/post";
-import { getTimeSincePost } from "@/utils/utilFunctions";
 import Image from "next/image";
 import Link from "next/link";
-import { IconContext } from "react-icons";
-import { FaRegHeart } from "react-icons/fa";
+
 
 export default function PostCard({ post }: { post: Post }) {
   const postDate = new Date(post.datePosted);
@@ -22,7 +19,7 @@ export default function PostCard({ post }: { post: Post }) {
       <div className="flex items-center space-x-2 px-4 ">
         <Link href={`/profile/${post.user}`}>
           <Image
-            src="/images/default_profpic.png"
+            src={`https://res.cloudinary.com/dcyk5quni/${post.user_details.profile_picture}`}
             width={50}
             height={50}
             alt={`${post.user_details.first_name} ${post.user_details.last_name}'s profile picture`}
