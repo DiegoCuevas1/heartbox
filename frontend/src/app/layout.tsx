@@ -51,7 +51,9 @@ export default function RootLayout({
           <div className="lg:flex mt-24">
             <LeftSideBar />
             <div className="flex-1 flex justify-center mt-8">{children}</div>
-            <Sidebar />
+            <div className="flex flex-col items-start">
+              <Sidebar />
+            </div>
           </div>
 
           <BottomNavBar />

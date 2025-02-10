@@ -1,12 +1,8 @@
-// Sidebar.tsx (already provided in the previous responses)
 "use client";
 import { Family } from "@/app/types";
 import { useUserContext } from "@/context/AuthContext";
 import Image from "next/image";
-import { useEffect, useRef, useState } from "react";
-import { toTitleCase } from "@/utils/utilFunctions";
-import { BsThreeDots } from "react-icons/bs";
-import Logout from "../logoutbtn";
+import { useEffect, useState } from "react";
 import { BiPlus } from "react-icons/bi";
 import Link from "next/link";
 
@@ -14,6 +10,7 @@ const Sidebar = () => {
   const { user, isAuthenticated } = useUserContext();
   const [data, setData] = useState<Family[] | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
+
   useEffect(() => {
     if (isAuthenticated) {
       const fetchFamilies = async () => {
@@ -22,13 +19,13 @@ const Sidebar = () => {
             "http://localhost:8000/api/user/families",
             {
               method: "GET",
-              credentials: "include", // Assuming the user is logged in and session is stored
+              credentials: "include",
             }
           );
 
           if (response.ok) {
             const data = await response.json();
-            setData(data); // Assuming the response has a 'families' field
+            setData(data);
           } else {
             console.error("Failed to fetch families");
           }
@@ -48,24 +45,17 @@ const Sidebar = () => {
   }
 
   return (
-    <div className="fixed top-0 right-0 w-64 h-screen  shadow-lg hidden lg:block">
-      <div
-        className="w-full h-full flex flex-col items-center border-l-4 border-transparent border-t-0 border-b-0 border-r-0 bg-gradient-to-b from-white via-white to-[#dadef0]"
-        style={{
-          borderImage: "linear-gradient(to bottom, #3f8fcb, transparent) 1",
-        }}
-      >
-        <div className="mt-12 flex flex-col items-center">
-          {/* Center the content */}
+    <div className="w-64 fixed right-80 h-full bg-white shadow-lg mt-4">
+      <div className="w-full h-full flex flex-col items-center border-l-4 border-transparent border-t-0 border-b-0 border-r-0 ">
+        <div className="mt-8 flex flex-col items-center">
           <Image
             src="/images/icon-blue.png"
             alt="Heartbox Logo"
-            className="w-16 h-16"
+            className="w-14 h-14"
             width={50}
             height={50}
           />
         </div>
-        {/* Sidebar content */}
         <div className="flex flex-col items-center mt-3">
           <h4 className="text-3xl">Heartboxes</h4>
           <div className="w-48 h-1 bg-[#368bca]" />
@@ -87,7 +77,7 @@ const Sidebar = () => {
                   <div key={family.id}>
                     <Link
                       href={`/families/${family.id}`}
-                      className="flex items-center space-x-4"
+                      className="flex items-center space-x-4 p-2  rounded-md hover:bg-gray-200"
                     >
                       <Image
                         src={`https://res.cloudinary.com/dcyk5quni/${family.family_picture}`}
@@ -99,7 +89,6 @@ const Sidebar = () => {
                       <li>{family.family_name}</li>
                     </Link>
                   </div>
-                  // Render family name
                 ))
               ) : (
                 <p>No families found.</p>

@@ -2,14 +2,20 @@
 import { useUserContext } from "@/context/AuthContext";
 import Link from "next/link";
 import Image from "next/image";
-import { FaAngleDown, FaBell, FaEllipsisH, FaHeart, FaHome, FaUser } from "react-icons/fa";
+
+import {
+  FaAngleDown,
+  FaAngleUp,
+  FaBell,
+  FaEllipsisH,
+  FaHeart,
+  FaHome,
+  FaUser,
+} from "react-icons/fa";
 import { useEffect, useRef, useState } from "react";
-import getCSRF from "@/utils/cookie";
-import toast from "react-hot-toast";
-import { sanitize_res_msg } from "@/utils/utilFunctions";
-import { redirect } from "next/navigation";
 import Logout from "../logoutbtn";
-import { usePathname } from 'next/navigation';
+import { usePathname } from "next/navigation";
+import Categories from "./Categories";
 
 export default function LeftSideBar() {
   const [isDropdownVisible, setIsDropdownVisible] = useState<boolean>(false);
@@ -40,29 +46,8 @@ export default function LeftSideBar() {
     setIsDropdownVisible((prev) => !prev);
   };
 
-  const handleLogout = async () => {
-    const csrfValue = getCSRF() ?? "";
-    try {
-      const res = await fetch("http://localhost:8000/api/user/logout", {
-        headers: {
-          "X-CSRFToken": csrfValue,
-        },
-        method: "DELETE",
-        credentials: "include",
-      });
-      const res_mesg = await res.text();
-      if (res.ok) {
-        toast.success(sanitize_res_msg(res_mesg));
-        redirect(`/home`);
-      } else toast.error(res_mesg);
-    } catch (error) {
-      toast.error("An error occured while making your request");
-      console.log((error as Error).toString());
-    }
-  };
-
   return (
-    <div className="fixed left-0 w-64 mt-2 h-screen bg-gradient-to-b from-transparent to-[#b1bbdf] p-4  hidden lg:flex flex-col items-center space-y-6">
+    <div className="fixed w-64 mt-2 h-screen p-4 hidden lg:flex flex-col items-center space-y-6 left-64 border-r-2 ">
       <Link
         href={`/profile/${user?.id}`}
         className="flex items-center group hover:text-blue-500 space-x-2"
@@ -85,10 +70,10 @@ export default function LeftSideBar() {
       <nav className="w-full px-8">
         <ul className="flex flex-col font-bold text-gray-900 space-y-5 text-xl">
           <li>
-            <Link 
-              href="/timeline" 
+            <Link
+              href="/timeline"
               className={`hover:text-blue-500 flex items-center space-x-3 ${
-                pathname === '/timeline' ? 'text-blue-800' : ''
+                pathname === "/timeline" ? "text-blue-800" : ""
               }`}
             >
               <FaHome className="text-2xl" />
@@ -96,10 +81,10 @@ export default function LeftSideBar() {
             </Link>
           </li>
           <li>
-            <Link 
-              href="/families" 
+            <Link
+              href="/families"
               className={`hover:text-blue-500 flex items-center space-x-3 ${
-                pathname === '/families' ? 'text-blue-800' : ''
+                pathname === "/families" ? "text-blue-800" : ""
               }`}
             >
               <FaHeart className="text-2xl" />
@@ -107,10 +92,10 @@ export default function LeftSideBar() {
             </Link>
           </li>
           <li>
-            <Link 
-              href="/notifications" 
+            <Link
+              href="/notifications"
               className={`hover:text-blue-500 flex items-center space-x-3 ${
-                pathname === '/notifications' ? 'text-blue-800' : ''
+                pathname === "/notifications" ? "text-blue-800" : ""
               }`}
             >
               <FaBell className="text-2xl" />
@@ -118,10 +103,10 @@ export default function LeftSideBar() {
             </Link>
           </li>
           <li>
-            <Link 
-              href={`/profile/${user?.id}`} 
+            <Link
+              href={`/profile/${user?.id}`}
               className={`hover:text-blue-500 flex items-center space-x-3 ${
-                pathname.startsWith('/profile') ? 'text-blue-800' : ''
+                pathname.startsWith("/profile") ? "text-blue-800" : ""
               }`}
             >
               <FaUser className="text-2xl" />
@@ -135,12 +120,17 @@ export default function LeftSideBar() {
             >
               <FaEllipsisH className="text-2xl" />
               <span>More</span>
-              <FaAngleDown />
+              <FaAngleDown
+                className={`transition-transform duration-300 transform ${
+                  isDropdownVisible ? "rotate-180" : "rotate-360"
+                }`}
+              />
             </button>
             {isDropdownVisible && (
               <div
                 ref={menuRef}
                 className="absolute top-full w-32 text-gray-900 mt-1 left-0 pb-2 bg-white shadow-lg border rounded"
+                onClick={(e) => e.stopPropagation()}
               >
                 <ul className="py-2">
                   <Link href={""}>
@@ -158,6 +148,9 @@ export default function LeftSideBar() {
               </div>
             )}
           </li>
+          <hr className="border-t-2 border-gray-300" />
+
+          <Categories />
         </ul>
       </nav>
     </div>
