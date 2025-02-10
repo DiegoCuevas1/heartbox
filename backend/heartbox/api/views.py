@@ -600,6 +600,7 @@ def send_connection_request(request):
         notification_type='CONNECTION_REQUEST',
         sender=request.user,
         recipient=to_user,
+        connection=connection,
         )
     return Response({"message": "Connection request sent."}, status=status.HTTP_201_CREATED)
 
@@ -651,4 +652,13 @@ def cancel_connection_request(request):
 
     # Cancel the connection request
     existing_connection.delete()  # Or you can set the status to 'CANCELLED' if you want to keep a record
-    return Response({"message": "Connection request canceled."}, status=status.HTTP_200_OK)
+
+    # Delete the associated notification using the connection ID
+    Notification.objects.filter(
+        sender=request.user,
+        recipient=to_user,
+        notification_type='CONNECTION_REQUEST',
+        connection_id=existing_connection.id  # Use the ID instead of the instance
+    ).delete()
+
+    return Response({"message": "Connection request canceled and notification deleted."}, status=status.HTTP_200_OK)

@@ -208,10 +208,18 @@ class Post(models.Model):
     # video = models.CharField(max_length=500)
 
 class NotificationManager(models.Manager):
-    def create_notif(self,notification_type, sender, recipient, post_mentioned=None, family_joined=None,timestamp=None):
+    def create_notif(self, notification_type, sender, recipient, connection=None, post_mentioned=None, family_joined=None, timestamp=None):
         if timestamp is None:
             timestamp = timezone.now()
-        return self.create(notification_type=notification_type, sender=sender,recipient=recipient,post_mentioned=post_mentioned, family_joined=family_joined, timestamp=timestamp)
+        return self.create(
+            notification_type=notification_type,
+            sender=sender,
+            recipient=recipient,
+            connection=connection,
+            post_mentioned=post_mentioned,
+            family_joined=family_joined,
+            timestamp=timestamp
+        )
     def create_group_join_notification(self, sender, recipient, family_joined):
         notification_type = 'GROUP_JOIN'
         timestamp = timezone.now()  # Current timestamp
@@ -267,6 +275,7 @@ class Notification(models.Model):
     recipient = models.ForeignKey(get_user_model(),related_name='received_notifications',on_delete=models.CASCADE)
     family_joined = models.ForeignKey('Family', related_name='family_notifications', on_delete=models.CASCADE, null=True, blank=True)
     post_mentioned = models.ForeignKey('Post', related_name='post_notifications',on_delete=models.CASCADE,null=True,blank=True)
+    connection = models.ForeignKey('Connection', on_delete=models.CASCADE, null=True, blank=True)
     class Meta:
         ordering = ['-timestamp']
 
