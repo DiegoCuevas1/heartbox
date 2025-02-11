@@ -14,3 +14,27 @@ html {
 .text-shadow {
   text-shadow: 1px 1px 5px black;
 }
+
+/* Custom Scrollbar for WebKit browsers (Chrome, Safari) */
+.categories ul::-webkit-scrollbar {
+  width: 8px; /* Width of the scrollbar */
+}
+
+.categories ul::-webkit-scrollbar-track {
+  background: #ffffff; /* Dark background for the scrollbar track */
+}
+
+.categories ul::-webkit-scrollbar-thumb {
+  background: #003366; /* Dark blue color for the scrollbar thumb */
+  border-radius: 10px; /* Rounded corners for the thumb */
+}
+
+.categories ul::-webkit-scrollbar-thumb:hover {
+  background: #00509e; /* Lighter blue color for the thumb on hover */
+}
+
+/* Custom Scrollbar for Firefox */
+.categories ul {
+  scrollbar-width: thin; /* Makes the scrollbar thinner */
+  scrollbar-color: #003366 #ffffff; /* Thumb color and track color */
+}

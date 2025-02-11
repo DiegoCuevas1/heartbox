@@ -7,7 +7,7 @@ import { BiPlus } from "react-icons/bi";
 import Link from "next/link";
 
 const Sidebar = () => {
-  const { user, isAuthenticated } = useUserContext();
+  const { isAuthenticated } = useUserContext();
   const [data, setData] = useState<Family[] | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
@@ -45,7 +45,7 @@ const Sidebar = () => {
   }
 
   return (
-    <div className="w-64 fixed right-80 h-full bg-white shadow-lg mt-4">
+    <div className="w-64 fixed right-72 h-full bg-white border-l-2 ">
       <div className="w-full h-full flex flex-col items-center border-l-4 border-transparent border-t-0 border-b-0 border-r-0 ">
         <div className="mt-8 flex flex-col items-center">
           <Image
