@@ -47,7 +47,7 @@ export default function LeftSideBar() {
   };
 
   return (
-    <div className="fixed w-64 mt-2 h-screen p-4 hidden lg:flex flex-col items-center space-y-6 left-64 border-r-2 ">
+    <div className="fixed w-96 mt-2 h-screen py-4 hidden lg:flex flex-col items-center space-y-6 left-48 border-r-2 ">
       <Link
         href={`/profile/${user?.id}`}
         className="flex items-center group hover:text-blue-500 space-x-2"
@@ -66,8 +66,8 @@ export default function LeftSideBar() {
         </div>
       </Link>
 
-      <div className="w-full h-1 rounded-md bg-gradient-to-t from-transparent  via-gray-400 to-transparent"></div>
-      <nav className="w-full px-8">
+      <div className="w-[60%] h-1 rounded-md bg-gradient-to-t from-transparent  via-gray-400 to-transparent"></div>
+      <nav className="w-[80%] px-8">
         <ul className="flex flex-col font-bold text-gray-900 space-y-5 text-xl">
           <li>
             <Link
