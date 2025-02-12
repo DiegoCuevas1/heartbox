@@ -48,14 +48,17 @@ export default function RootLayout({
         />
         <UserContextProvider>
           <NavBar />
-          <div className="lg:flex mt-24">
-            <LeftSideBar />
-            <div className="flex-1 flex justify-center mt-8">{children}</div>
-            <div className="flex flex-col items-start">
+          <div className="flex ">
+            <div className="hidden lg:block fixed left-48 top-28 h-full w-64 z-10">
+              <LeftSideBar />
+            </div>
+            <div className="flex-1 overflow-y-auto h-screen mt-28 flex justify-center">
+              <div className="max-w-2xl">{children}</div>
+            </div>
+            <div className="hidden lg:block fixed right-60 top-28 h-full w-64 bg-white z-10">
               <Sidebar />
             </div>
           </div>
-
           <BottomNavBar />
         </UserContextProvider>
       </body>

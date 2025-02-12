@@ -47,7 +47,7 @@ export default function LeftSideBar() {
   };
 
   return (
-    <div className="fixed w-96 mt-2 h-screen py-4 hidden lg:flex flex-col items-center space-y-6 left-48 border-r-2 ">
+    <div className="w-96 h-screen hidden lg:flex flex-col items-center space-y-6 border-r-2 ">
       <Link
         href={`/profile/${user?.id}`}
         className="flex items-center group hover:text-blue-500 space-x-2"

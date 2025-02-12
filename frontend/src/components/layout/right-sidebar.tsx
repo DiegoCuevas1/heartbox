@@ -45,9 +45,9 @@ const Sidebar = () => {
   }
 
   return (
-    <div className="w-64 fixed right-72 h-full bg-white border-l-2 ">
-      <div className="w-full h-full flex flex-col items-center border-l-4 border-transparent border-t-0 border-b-0 border-r-0 ">
-        <div className="mt-8 flex flex-col items-center">
+    <div className="h-full w-72 bg-white border-l-2 z-10">
+      <div className="w-full h-full flex flex-col items-center ">
+        <div className="flex flex-col items-center">
           <Image
             src="/images/icon-blue.png"
             alt="Heartbox Logo"
@@ -64,20 +64,20 @@ const Sidebar = () => {
             href={"/families/add-family"}
             className="flex items-center space-x-2"
           >
-            <BiPlus className="text-center bg-[#368bca] text-white rounded-full " />
+            <BiPlus className="text-center bg-[#368bca] text-white rounded-full" />
             <p>Add Heartbox</p>
           </Link>
 
           {loading ? (
             <p>Loading heartboxes...</p>
           ) : (
-            <ul className="space-y-2 mt-2">
+            <ul className="max-h-[600px] overflow-y-auto space-y-2 rounded-xl">
               {data && data.length > 0 ? (
                 data.map((family) => (
                   <div key={family.id}>
                     <Link
                       href={`/families/${family.id}`}
-                      className="flex items-center space-x-4 p-2  rounded-md hover:bg-gray-200"
+                      className="flex items-center space-x-4 p-2 rounded-md hover:bg-gray-200"
                     >
                       <Image
                         src={`https://res.cloudinary.com/dcyk5quni/${family.family_picture}`}
