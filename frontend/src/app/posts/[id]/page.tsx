@@ -2,6 +2,8 @@
 import { Post } from "@/app/types/post";
 import { useEffect, useState } from "react";
 import PostCard from "@/components/postCard";
+import CommentSection from "@/components/CommentSection";
+
 async function getData(postId: string) {
   try {
     const res = await fetch(
@@ -42,7 +44,14 @@ export default function PostPage({ params }: { params: { id: string } }) {
   }, [postId]);
   return (
     <>
-      <div className="flex-col mt-2">{post && <PostCard post={post} />}</div>
+      <div className="flex-col mt-2">
+        {post && (
+          <>
+            <PostCard post={post} />
+            <CommentSection postId={post.id} />
+          </>
+        )}
+      </div>
     </>
   );
 }

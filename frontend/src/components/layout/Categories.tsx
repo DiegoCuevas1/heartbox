@@ -1,6 +1,16 @@
 import Image from "next/image";
+import Link from "next/link";
 
-export default function Categories() {
+interface CategoriesProps {
+  onLinkClick?: (href: string) => void;
+}
+
+export default function Categories({ onLinkClick }: CategoriesProps) {
+  const handleClick = (href: string) => {
+    if (onLinkClick) {
+      onLinkClick(href);
+    }
+  };
   // Define the categories
   const categories = [
     { id: 1, name: "Wedding Relics", image: "/images/wedding-relics.png" },
@@ -26,25 +36,32 @@ export default function Categories() {
   ];
 
   return (
-    <div className="categories">
-      <ul className="max-h-72 overflow-y-auto space-y-2 rounded-xl  ">
+    <div className="categories w-full">
+      <ul className="max-h-72 overflow-y-auto space-y-3">
         {categories.map((category) => (
-          <li key={category.id} className="flex items-center">
-            <a
+          <li
+            key={category.id}
+            onClick={() =>
+              handleClick(
+                `/categories/${category.name.toLowerCase().replace(" ", "-")}`
+              )
+            }
+          >
+            <Link
               href={`/categories/${category.name.toLowerCase().replace(" ", "-")}`}
-              className="flex items-center group"
+              className="flex items-center group w-full hover:bg-gray-50 p-2 rounded-lg transition-colors"
             >
               <Image
-                src={category.image}
+                src={`/images/icon-blue.png`}
                 alt={category.name}
-                className="w-16 h-16 p-1 rounded-full border-2 group-hover:border-blue-500"
-                width={60}
-                height={60}
+                className="w-12 h-12 rounded-full border-2 group-hover:border-blue-500 flex-shrink-0"
+                width={48}
+                height={48}
               />
-              <span className="group-hover:text-blue-500 ml-2">
+              <span className="group-hover:text-blue-500 ml-3">
                 {category.name}
               </span>
-            </a>
+            </Link>
           </li>
         ))}
       </ul>

@@ -35,6 +35,40 @@ export default function FormComponent() {
   const user = useUserContext();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const [category, setCategory] = useState<string>("");
+  const [mediaPreview, setMediaPreview] = useState<string | null>(null);
+  const [mediaType, setMediaType] = useState<"IMAGE" | "VIDEO" | null>(null);
+  const [mediaFile, setMediaFile] = useState<File | null>(null);
+
+  const handleMediaChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Check file size (10MB limit)
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("File size must be less than 10MB");
+      return;
+    }
+
+    // Determine media type
+    const type = file.type.startsWith("image/")
+      ? "IMAGE"
+      : file.type.startsWith("video/")
+        ? "VIDEO"
+        : null;
+    if (!type) {
+      toast.error("Invalid file type. Please upload an image or video.");
+      return;
+    }
+
+    setMediaType(type);
+    setMediaFile(file);
+
+    // Create preview URL
+    const previewUrl = URL.createObjectURL(file);
+    setMediaPreview(previewUrl);
+  };
+
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
@@ -43,21 +77,34 @@ export default function FormComponent() {
       return;
     }
 
-    const formData = new FormData(e.currentTarget);
+    const formData = new FormData();
+    formData.append("familyId", selectedFamily?.id.toString() || "");
+    formData.append(
+      "title",
+      (e.currentTarget.querySelector('[name="title"]') as HTMLInputElement)
+        ?.value || ""
+    );
+    formData.append(
+      "description",
+      (
+        e.currentTarget.querySelector(
+          '[name="description"]'
+        ) as HTMLTextAreaElement
+      )?.value || ""
+    );
+    formData.append("category", category);
 
-    const data = {
-      familyId: selectedFamily?.id,
-      title: formData.get("title"),
-      description: formData.get("description"),
-    };
+    if (mediaFile && mediaType) {
+      formData.append("media", mediaFile);
+      formData.append("media_type", mediaType);
+    }
+
     const res = await fetch("http://localhost:8000/api/user/posts", {
-      headers: {
-        "Content-Type": "application/json",
-      },
       method: "POST",
-      body: JSON.stringify(data),
+      body: formData,
       credentials: "include",
     });
+
     const res_msg = await res.text();
     if (res.ok) {
       toast.success(sanitize_res_msg(res_msg));
@@ -106,26 +153,82 @@ export default function FormComponent() {
     <div className="flex-col flex">
       <form className="flex-col flex space-y-1" onSubmit={handleSubmit}>
         <div className="flex space-y-2 flex-col">
-          <label className="w-10 font-loves font-bold border-b-2 border-[#d31c60]">
+          <label className="w-10 font-bold border-b-2 border-[#d31c60]">
             Title
           </label>
           <input
-            className="border-[#d31c60] font-loves font-bold italic rounded-md px-2 border-2"
+            className="border-[#d31c60]  font-bold italic rounded-md px-2 border-2"
             type="text"
             name="title"
             placeholder="Enter Post Title..."
           />
         </div>
         <div className="flex space-y-2 flex-col">
-          <label className="w-24 font-loves font-bold border-b-2 border-[#d31c60]">
+          <label className="w-24  font-bold border-b-2 border-[#d31c60]">
             Description
           </label>
           <textarea
-            className="border-[#d31c60] font-loves font-bold italic rounded-md px-2 border-2"
+            className="border-[#d31c60] font-bold italic rounded-md px-2 border-2"
             rows={5}
             name="description"
             placeholder="Enter Post Description..."
           />
+        </div>
+        <div className="flex space-y-2 flex-col">
+          <label className="w-24  font-bold border-b-2 border-[#d31c60]">
+            Category
+          </label>
+          <select
+            className="border-[#d31c60]  font-bold italic rounded-md px-2 border-2"
+            name="category"
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+          >
+            <option value="">Select Category</option>
+            <option value="Wedding">Wedding</option>
+            <option value="Christmas">Christmas</option>
+            <option value="Birthday">Birthday</option>
+            <option value="Anniversary">Anniversary</option>
+            <option value="Other">Other</option>
+            <option value="None">None</option>
+          </select>
+        </div>
+        <div className="flex space-y-2 flex-col">
+          <label className="w-24 font-bold border-b-2 border-[#d31c60]">
+            Media
+          </label>
+          <input
+            type="file"
+            accept="image/*,video/*"
+            onChange={handleMediaChange}
+            className="border-[#d31c60] font-bold italic rounded-md px-2 border-2"
+          />
+          {mediaPreview && (
+            <div className="mt-2">
+              {mediaType === "IMAGE" ? (
+                <Image
+                  src={mediaPreview}
+                  alt="Preview"
+                  width={200}
+                  height={200}
+                  className="object-contain"
+                />
+              ) : (
+                <video src={mediaPreview} controls className="max-w-[200px]" />
+              )}
+              <button
+                type="button"
+                onClick={() => {
+                  setMediaPreview(null);
+                  setMediaFile(null);
+                  setMediaType(null);
+                }}
+                className="mt-2 text-[#d31c60]"
+              >
+                Remove media
+              </button>
+            </div>
+          )}
         </div>
         <div className="flex mx-auto space-x-4">
           <div className="flex-col flex space-y-2">
@@ -139,7 +242,7 @@ export default function FormComponent() {
                 </p>
               ) : (
                 <Image
-                  src={`/images/default_profpic.png`}
+                  src="/images/default_profpic.png"
                   width={35}
                   height={50}
                   alt={""}

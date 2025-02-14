@@ -1,12 +1,15 @@
 import FormComponent from "./form";
+import { Suspense } from "react";
 
 export default function Page() {
   return (
-    <div className="flex-col flex bg-[#fde9f1] h-screen p-4">
-      <h2 className="mx-auto text-3xl font-loves font-bold border-b-4 border-[#d31c60]">
+    <div className="flex-col flex h-screen">
+      <h2 className="mx-auto text-3xl font-bold border-b-4 border-links">
         Create Post
       </h2>
-      <FormComponent />
+      <Suspense fallback={<div>Loading...</div>}>
+        <FormComponent />
+      </Suspense>
     </div>
   );
 }

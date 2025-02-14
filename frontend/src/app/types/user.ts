@@ -7,5 +7,9 @@ type User = {
   profile_picture: string;
   // Add other user details here if needed
   families: Family[];
+  connectionStatus?: string;
+  isIncomingRequest?: boolean;
+  connectionId?: string;
+  connection_count?: number;
 };
 export type { User };

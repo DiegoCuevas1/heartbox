@@ -143,7 +143,7 @@ export default function CardGenerator() {
     <div>
       <motion.div
         key={currentPage}
-        className="grid grid-cols-3 md:mx-40 gap-y-4"
+        className="grid grid-cols-3 gap-y-4"
         initial={{ x: direction === "right" ? 100 : -100 }}
         animate={{ x: 0 }}
         exit={{ x: direction === "right" ? -100 : 100 }}

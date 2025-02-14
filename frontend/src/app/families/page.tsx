@@ -3,7 +3,7 @@ import CardGenerator from "./cardGenerator";
 
 export default function Home() {
   return (
-    <div className="flex flex-col h-screen bg-main">
+    <div className="flex flex-col bg-main">
       <h3 className="mx-auto text-4xl mb-4 text-default border-links font-loves font-bold border-b-4">
         Heartboxes
       </h3>

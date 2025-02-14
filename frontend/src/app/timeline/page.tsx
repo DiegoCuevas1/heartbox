@@ -1,12 +1,12 @@
 "use client";
-
+import { useUserContext } from "@/context/AuthContext";
 import { useEffect, useState } from "react";
 import { Post } from "../types/post";
 import TimelinePostCard from "./timelineCard";
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
-
+import { redirect } from "next/navigation";
 async function getData() {
   try {
     const res = await fetch(`http://localhost:8000/api/user/posts`, {
@@ -32,7 +32,7 @@ async function getData() {
 export default function Timeline() {
   const [posts, setPosts] = useState<Post[] | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-
+  const { isAuthenticated } = useUserContext();
   useEffect(() => {
     async function fetchData() {
       try {
@@ -48,25 +48,25 @@ export default function Timeline() {
     fetchData();
   }, []);
 
+  if (!isAuthenticated) {
+    redirect("/home");
+  }
   if (isLoading) {
     return (
       <div className="flex-col space-y-2">
         {[1, 2, 3, 4].map((index) => (
-          <div 
-            key={index} 
-            className="flex-col border-b-[1px] border-gray py-3"
-          >
+          <div key={index} className="flex-col border-b-[1px] border-gray py-3">
             <div className="flex items-center space-x-2 px-4">
               {/* Profile picture skeleton */}
               <div className="w-12 h-12 bg-gray-200 rounded-full animate-pulse" />
-              
+
               <div className="flex-col flex-1">
                 {/* Name and time skeleton */}
                 <div className="flex items-center space-x-2">
                   <div className="h-4 bg-gray-200 rounded animate-pulse w-32" />
                   <div className="h-4 bg-gray-200 rounded animate-pulse w-16" />
                 </div>
-                
+
                 {/* Family name skeleton */}
                 <div className="flex items-center space-x-1 mt-1">
                   <div className="h-3 bg-gray-200 rounded animate-pulse w-16" />
@@ -88,7 +88,7 @@ export default function Timeline() {
 
   if (!posts || posts.length === 0) {
     return (
-      <motion.div 
+      <motion.div
         className="flex-col flex items-center justify-center"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -117,26 +117,46 @@ export default function Timeline() {
   }
 
   return (
-    <motion.div 
-      className="flex-col text-default space-y-2 h-full"
+    <motion.div
+      className="flex-col justify-center items-center flex"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.8 }}
     >
-      {posts.map((post, index) => (
-        <motion.div 
-          key={post.id} 
-          className="flex-col mt-2"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ 
-            duration: 0.8,
-            delay: index * 0.15 
-          }}
-        >
-          <TimelinePostCard post={post} />
-        </motion.div>
-      ))}
+      <div className={`flex-col mt-1 ${posts.length < 3 && "pb-48"}`}>
+        {posts.length === 0 ? (
+          <motion.div
+            className="flex-col flex justify-center space-y-2 items-center text-2xl w-full "
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+          >
+            <p>Be the first to post in this family!</p>
+            <Link href="/create-post">
+              <button className="p-2 bg-[#4D94D0] w-36 text-xl font-loves font-bold text-white mt-3 rounded-lg shadow-[0_20px_10px_-15px_rgba(0,0,0,.3)] mx-auto hover:scale-125 active:scale-90 transition-all">
+                Create Post
+              </button>
+            </Link>
+          </motion.div>
+        ) : (
+          <>
+            {posts.map((post, index) => (
+              <motion.div
+                key={index}
+                className="flex-col justify-center mt-2"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{
+                  duration: 0.8,
+                  delay: index * 0.15,
+                }}
+              >
+                <TimelinePostCard post={post} />
+              </motion.div>
+            ))}
+          </>
+        )}
+      </div>
     </motion.div>
   );
 }

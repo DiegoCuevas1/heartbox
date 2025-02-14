@@ -41,7 +41,7 @@ const Sidebar = () => {
   }, [isAuthenticated]);
 
   if (!isAuthenticated) {
-    return null; // Don't render the sidebar if not authenticated
+    return <></>; // Don't render the sidebar if not authenticated
   }
 
   return (
@@ -54,6 +54,7 @@ const Sidebar = () => {
             className="w-14 h-14"
             width={50}
             height={50}
+            style={{ width: "auto", height: "auto" }}
           />
         </div>
         <div className="flex flex-col items-center mt-3">
@@ -71,7 +72,7 @@ const Sidebar = () => {
           {loading ? (
             <p>Loading heartboxes...</p>
           ) : (
-            <ul className="max-h-[600px] overflow-y-auto space-y-2 rounded-xl">
+            <ul className="max-h-[600px] overflow-y-auto space-y-2 rounded-xl families-list">
               {data && data.length > 0 ? (
                 data.map((family) => (
                   <div key={family.id}>

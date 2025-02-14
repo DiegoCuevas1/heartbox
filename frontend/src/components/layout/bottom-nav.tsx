@@ -4,8 +4,8 @@ import Image from "next/image";
 import Link from "next/link";
 
 const BottomNavBar = () => {
-  const { profilePic, authStatus, userId } = useUserContext();
-  if (!authStatus) {
+  const { isAuthenticated, user } = useUserContext();
+  if (!isAuthenticated) {
     return <></>;
   }
 
@@ -13,10 +13,11 @@ const BottomNavBar = () => {
     <div className="flex w-screen h-24 bg-[#b8d4ec] fixed bottom-0 z-[1] justify-around items-center lg:hidden">
       <Link href={"/timeline"}>
         <Image
-          src="/images/heartbox_logo.png"
-          width={60}
-          height={60}
+          src="/images/icon-blue.png"
+          width={50}
+          height={50}
           alt="Heartbox Home Page Logo"
+          style={{ width: "auto", height: "auto" }}
         />
       </Link>
       <Link href={"/families"}>
@@ -25,6 +26,7 @@ const BottomNavBar = () => {
           width={55}
           height={55}
           alt="Heartbox Home Page Logo"
+          style={{ width: "auto", height: "auto" }}
         />
       </Link>
       <Link href={"/create-post"}>
@@ -33,6 +35,7 @@ const BottomNavBar = () => {
           width={50}
           height={50}
           alt="Heartbox Home Page Logo"
+          style={{ width: "auto", height: "auto" }}
         />
       </Link>
       <Link href={"/notifications"}>
@@ -41,18 +44,18 @@ const BottomNavBar = () => {
           width={50}
           height={50}
           alt="Heartbox Home Page Logo"
+          style={{ width: "auto", height: "auto" }}
         />
       </Link>
-      {authStatus && (
-        <Link href={`/profile/${userId}`}>
-          {profilePic && (
+      {isAuthenticated && (
+        <Link href={`/profile/${user?.id}`}>
+          {user?.profile_picture && (
             <Image
-              src="/images/default_profpic.png"
+              src={`https://res.cloudinary.com/dcyk5quni/${user?.profile_picture}`}
               width={50}
-              height={100}
+              height={50}
               alt="Heartbox Home Page Logo"
-              className="h-12 rounded-full"
-              style={{ objectFit: "cover" }}
+              style={{ width: "auto", height: "auto" }}
             />
           )}
         </Link>

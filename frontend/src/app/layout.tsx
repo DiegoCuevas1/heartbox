@@ -9,6 +9,9 @@ import React from "react";
 import Sidebar from "@/components/layout/right-sidebar";
 import LeftSideBar from "@/components/layout/left-sidebar";
 
+import MainContent from "@/components/layout/main-content";
+import { NotificationProvider } from "@/context/NotificationContext";
+
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
@@ -23,7 +26,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={`bg-main ${inter.className}`}>
+      <body className={`bg-main ${inter.className} overflow-hidden`}>
         <Toaster
           position="top-left"
           reverseOrder={false}
@@ -47,19 +50,34 @@ export default function RootLayout({
           }}
         />
         <UserContextProvider>
-          <NavBar />
-          <div className="flex ">
-            <div className="hidden lg:block fixed left-48 top-28 h-full w-64 z-10">
-              <LeftSideBar />
+          <NotificationProvider>
+            <div className="fixed top-0 left-0 right-0 z-50">
+              <NavBar />
             </div>
-            <div className="flex-1 overflow-y-auto h-screen mt-28 flex justify-center">
-              <div className="max-w-2xl">{children}</div>
+
+            <div className="flex h-screen pt-28">
+              {/* Left Sidebar - only show on xl and up */}
+              <div className="hidden xl:block fixed left-24 top-28 bottom-16 w-72">
+                <div className="h-full">
+                  <LeftSideBar />
+                </div>
+              </div>
+
+              {/* Main Content - scrollable */}
+              <MainContent>{children}</MainContent>
+
+              {/* Right Sidebar - only show on xl and up */}
+              <div className="hidden xl:block fixed right-24 top-28 bottom-16">
+                <div className="h-full">
+                  <Sidebar />
+                </div>
+              </div>
             </div>
-            <div className="hidden lg:block fixed right-60 top-28 h-full w-64 bg-white z-10">
-              <Sidebar />
+
+            <div className="fixed bottom-0 left-0 right-0 z-50">
+              <BottomNavBar />
             </div>
-          </div>
-          <BottomNavBar />
+          </NotificationProvider>
         </UserContextProvider>
       </body>
     </html>

@@ -47,7 +47,7 @@ const SearchBar = () => {
         className={`flex items-center justify-center p-2 border-gray-300 active:border-black border rounded-r-md transition-transform duration-150 active:scale-90`} // Scale effect
         onSubmit={handleSearch} // Handle button click
       >
-        <BiSearch className="text-gray-900 text-3xl" /> {/* Adjusted size */}
+        <BiSearch className="text-gray-900 text-3xl" />
       </button>
     </form>
   );

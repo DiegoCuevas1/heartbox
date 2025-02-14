@@ -7,6 +7,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import ConnectionsModal from "@/components/modals/ConnectionsModal";
+import RemoveConnectionModal from "@/components/modals/RemoveConnectionModal";
+
 async function getData(userId: string) {
   try {
     const res = await fetch(
@@ -29,6 +31,7 @@ async function getData(userId: string) {
     return error; // Rethrow the error to be caught by the calling code
   }
 }
+
 export default function Profile({ params }: { params: { id: string } }) {
   const router = useRouter();
   const [user, setUser] = useState<User | null>();
@@ -39,6 +42,8 @@ export default function Profile({ params }: { params: { id: string } }) {
     useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const { user: currentUser } = useUserContext();
+  const [isRemoveModalOpen, setIsRemoveModalOpen] = useState<boolean>(false);
+  const [isIncomingRequest, setIsIncomingRequest] = useState<boolean>(false);
 
   const toggleConnectionModal = () => {
     setIsConnectionModalOpen((prev) => !prev);
@@ -50,6 +55,7 @@ export default function Profile({ params }: { params: { id: string } }) {
         const fetchedData = await getData(params.id);
         setUser(fetchedData);
         setConnectionStatus(fetchedData.connectionStatus || "none");
+        setIsIncomingRequest(fetchedData.isIncomingRequest || false);
         setError(null);
       } catch (error: any) {
         setError(error.message);
@@ -103,6 +109,78 @@ export default function Profile({ params }: { params: { id: string } }) {
       setConnectionStatus("none");
     } catch (error: any) {
       console.error(error.message); // Handle error (e.g., show an error message)
+    }
+  };
+
+  const acceptConnectionRequest = async () => {
+    try {
+      const res = await fetch(`http://localhost:8000/api/connections/respond`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          connectionId: user?.connectionId,
+          action: "accept",
+        }),
+        credentials: "include",
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to accept connection request");
+      }
+
+      // Update the connection status to accepted
+      setConnectionStatus("ACCEPTED");
+    } catch (error: any) {
+      console.error(error.message);
+    }
+  };
+
+  const declineConnectionRequest = async () => {
+    try {
+      const res = await fetch(`http://localhost:8000/api/connections/respond`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          connectionId: user?.connectionId,
+          action: "decline",
+        }),
+        credentials: "include",
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to decline connection request");
+      }
+
+      // Update the connection status to none
+      setConnectionStatus("none");
+    } catch (error: any) {
+      console.error(error.message);
+    }
+  };
+
+  const removeConnection = async () => {
+    try {
+      const res = await fetch(`http://localhost:8000/api/connections/remove`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ userId: params.id }),
+        credentials: "include",
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to remove connection");
+      }
+
+      // Update the connection status to none
+      setConnectionStatus("none");
+    } catch (error: any) {
+      console.error(error.message);
     }
   };
 
@@ -165,7 +243,7 @@ export default function Profile({ params }: { params: { id: string } }) {
               className="text-xl text-center font-semibold hover:text-links hover:cursor-pointer"
               onClick={toggleConnectionModal}
             >
-              0 connections
+              {user?.connection_count} connections
             </p>
             <ConnectionsModal
               isOpen={isConnectionModalOpen}
@@ -193,23 +271,57 @@ export default function Profile({ params }: { params: { id: string } }) {
 
       {!isOwnProfile && (
         <div className="flex justify-center mt-4 space-x-4">
-          <button
-            onClick={
-              connectionStatus === "PENDING"
-                ? cancelConnectionRequest
-                : sendConnectionRequest
-            }
-            className="bg-links text-white hover:bg-[#407cad] transition-all duration-300 px-4 py-2 rounded-md active:scale-90"
-          >
-            {connectionStatus === "PENDING"
-              ? "Cancel Request"
-              : "Add Connection"}
-          </button>
+          {connectionStatus === "ACCEPTED" ? (
+            <button
+              onClick={() => setIsRemoveModalOpen(true)}
+              className="bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600 transition-all duration-300 active:scale-90"
+            >
+              Remove Connection
+            </button>
+          ) : connectionStatus === "PENDING" ? (
+            isIncomingRequest ? (
+              <div className="space-x-4">
+                <button
+                  onClick={acceptConnectionRequest}
+                  className="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 transition-all duration-300 active:scale-90"
+                >
+                  Accept Request
+                </button>
+                <button
+                  onClick={declineConnectionRequest}
+                  className="bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600 transition-all duration-300 active:scale-90"
+                >
+                  Decline Request
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={cancelConnectionRequest}
+                className="bg-links text-white hover:bg-[#407cad] transition-all duration-300 px-4 py-2 rounded-md active:scale-90"
+              >
+                Cancel Request
+              </button>
+            )
+          ) : (
+            <button
+              onClick={sendConnectionRequest}
+              className="bg-links text-white hover:bg-[#407cad] transition-all duration-300 px-4 py-2 rounded-md active:scale-90"
+            >
+              Add Connection
+            </button>
+          )}
           <button className="bg-links text-white hover:bg-[#407cad] transition-all duration-300 px-4 py-2 rounded-md active:scale-90">
             Send Message
           </button>
         </div>
       )}
+
+      <RemoveConnectionModal
+        isOpen={isRemoveModalOpen}
+        onClose={() => setIsRemoveModalOpen(false)}
+        onConfirm={removeConnection}
+        userName={`${user?.first_name} ${user?.last_name}`}
+      />
 
       <div className="flex w-full items-center justify-between mt-8">
         <div className="w-full border-t border-pink-700" />
@@ -217,7 +329,7 @@ export default function Profile({ params }: { params: { id: string } }) {
         <div className="w-full border-t border-pink-700" />
       </div>
 
-      <div className="flex-col">
+      <div className="flex-col  justify-center items-center flex">
         <ProfileTimeline id={params.id} />
       </div>
     </div>

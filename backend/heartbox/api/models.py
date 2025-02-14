@@ -9,6 +9,7 @@ from django.dispatch import receiver
 from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
 from cloudinary.models import CloudinaryField
+from django.db.models import Q
 
 class UserProfileManager(BaseUserManager):
     def create_user(self, email, first_name, last_name, birthdate, pin, password=None,profile_picture=None,):
@@ -72,9 +73,11 @@ class UserProfile(AbstractBaseUser, PermissionsMixin):
         self.posts.remove(post)
     
     def get_connection_status(self, other_user):
-        connection = self.connections_from.filter(to_user=other_user).first()
+        connection = Connection.objects.filter(
+            Q(from_user=self, to_user=other_user) | Q(from_user=other_user, to_user=self)
+        ).first()
         if connection:
-            return connection.status  # This will return 'PENDING', 'ACCEPTED', or 'DECLINED'
+            return connection.status  # Returns 'PENDING', 'ACCEPTED', or 'DECLINED'
         return 'none'
 
 
@@ -175,14 +178,18 @@ class Family(models.Model):
 
 
 class PostManager(models.Manager):
-    def create_post(self, title, message, user, family=None, date_posted=None):
+    def create_post(self, title, message, user, family=None, date_posted=None, media_type=None, media_url=None, categories=None):
         post = self.create(
             title=title,
             message=message,
             user=user,
             family=family,
-            datePosted=date_posted
+            datePosted=date_posted,
+            media_type=media_type,
+            media_url=media_url
         )
+        if categories:
+            post.categories.set(categories)
         post.save()
         return post
     def like_post(self, post, user):
@@ -194,6 +201,19 @@ class PostManager(models.Manager):
     def get_posts_in_family(self, family):
         return self.filter(family=family)
 
+class Category(models.Model):
+    id = models.AutoField(primary_key=True)
+    name = models.CharField(max_length=100, unique=True)
+    description = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        verbose_name_plural = "categories"
+        ordering = ['name']
+    
+    def __str__(self):
+        return self.name
+
 class Post(models.Model):
     id = models.AutoField(primary_key=True)
     user = models.ForeignKey(get_user_model(),on_delete=models.CASCADE)
@@ -202,10 +222,40 @@ class Post(models.Model):
     title = models.CharField(max_length=200)
     datePosted = models.DateTimeField(auto_now_add=True)
     likes = models.ManyToManyField(get_user_model(), related_name='liked_posts', blank=True)
+    # Media fields
+    media_type = models.CharField(max_length=10, choices=[('IMAGE', 'Image'), ('VIDEO', 'Video')], null=True, blank=True)
+    media_url = models.CharField(max_length=500, null=True, blank=True)  # Store Cloudinary URL
+    # Categories
+    categories = models.ManyToManyField('Category', related_name='posts', blank=True)
  
     objects = PostManager()
     # For video hosting implementation:
     # video = models.CharField(max_length=500)
+
+class CommentManager(models.Manager):
+    def create_comment(self, message, user, post, date_posted=None, parent=None ):
+        comment = self.create(
+            message=message,
+            user=user,
+            post=post,
+            datePosted=date_posted,
+            parent=parent
+        )
+        comment.save()
+        return comment
+
+class Comment(models.Model):
+    id = models.AutoField(primary_key=True)
+    user = models.ForeignKey(get_user_model(), on_delete=models.CASCADE)
+    post = models.ForeignKey(Post, related_name='comments', on_delete=models.CASCADE)
+    message = models.TextField()
+    datePosted = models.DateTimeField(auto_now_add=True)
+    parent = models.ForeignKey('self', null=True, blank=True, on_delete=models.CASCADE, related_name='replies')
+    
+    objects = CommentManager()
+
+    class Meta:
+        ordering = ['-datePosted']
 
 class NotificationManager(models.Manager):
     def create_notif(self, notification_type, sender, recipient, connection=None, post_mentioned=None, family_joined=None, timestamp=None):
@@ -220,6 +270,7 @@ class NotificationManager(models.Manager):
             family_joined=family_joined,
             timestamp=timestamp
         )
+
     def create_group_join_notification(self, sender, recipient, family_joined):
         notification_type = 'GROUP_JOIN'
         timestamp = timezone.now()  # Current timestamp
@@ -260,12 +311,29 @@ class NotificationManager(models.Manager):
             timestamp=timestamp
         )
 
+    def create_connection_accepted_notification(self, sender, recipient):
+        """
+        Create a notification when a connection request is accepted.
+        This should be called for both users involved in the connection.
+        """
+        notification_type = 'CONNECTION_ACCEPTED'
+        timestamp = timezone.now()
+
+        return self.create_notif(
+            notification_type=notification_type,
+            sender=sender,
+            recipient=recipient,
+            timestamp=timestamp
+        )
+
 class Notification(models.Model):
     NOTIFICATION_TYPES = (
             ('GROUP_JOIN', 'Group Join'),
             ('POST_MENTION', 'Post Mention'),
             ('GROUP_INVITATION', 'Group Invitation'),
             ('CONNECTION_REQUEST','Connection Request'),
+            ('CONNECTION_ACCEPTED', 'Connection Accepted'),
+            ('COMMENT', 'Comment'),
             # Add more notification types as needed
         )
     id = models.AutoField(primary_key=True)
@@ -276,10 +344,17 @@ class Notification(models.Model):
     family_joined = models.ForeignKey('Family', related_name='family_notifications', on_delete=models.CASCADE, null=True, blank=True)
     post_mentioned = models.ForeignKey('Post', related_name='post_notifications',on_delete=models.CASCADE,null=True,blank=True)
     connection = models.ForeignKey('Connection', on_delete=models.CASCADE, null=True, blank=True)
+    comment = models.ForeignKey('Comment', on_delete=models.CASCADE, null=True, blank=True)
+    read = models.BooleanField(default=False)
+
     class Meta:
         ordering = ['-timestamp']
 
     def __str__(self):
         return f'{self.notification_type} Notification'
+    
+    def mark_as_read(self):
+        self.read = True
+        self.save()
     
     objects=NotificationManager()

@@ -1,12 +1,16 @@
 from rest_framework import serializers
-from .models import Family, Notification,  UserProfile, Post
+from .models import Family, Notification,  UserProfile, Post, Comment, Connection
+from django.db.models import Q
 
 class UserProfileSerializer(serializers.ModelSerializer):
     connectionStatus = serializers.SerializerMethodField()
+    isIncomingRequest = serializers.SerializerMethodField()
+    connectionId = serializers.SerializerMethodField()
+    connection_count = serializers.SerializerMethodField()
 
     class Meta:
         model = UserProfile
-        fields = ['id', 'first_name', 'last_name', 'profile_picture', 'connectionStatus']
+        fields = ['id', 'first_name', 'last_name', 'profile_picture', 'connectionStatus', 'isIncomingRequest', 'connectionId', 'connection_count']
 
     def to_representation(self, instance):
         # Get the default representation
@@ -32,15 +36,82 @@ class UserProfileSerializer(serializers.ModelSerializer):
             return current_user.get_connection_status(obj)
         return None
 
+    def get_isIncomingRequest(self, obj):
+        """
+        Check if there is an incoming connection request from this user.
+        """
+        request = self.context.get('request')
+        if request and hasattr(request, 'user'):
+            current_user = request.user
+            connection = Connection.objects.filter(
+                from_user=obj,
+                to_user=current_user,
+                status='PENDING'
+            ).first()
+            return connection is not None
+        return False
+
+    def get_connectionId(self, obj):
+        """
+        Get the ID of the connection between the current user and this user.
+        """
+        request = self.context.get('request')
+        if request and hasattr(request, 'user'):
+            current_user = request.user
+            connection = Connection.objects.filter(
+                (Q(from_user=current_user) & Q(to_user=obj)) |
+                (Q(from_user=obj) & Q(to_user=current_user))
+            ).first()
+            return str(connection.id) if connection else None
+        return None
+
+    def get_connection_count(self, obj):
+        """
+        Get the total number of accepted connections for this user.
+        """
+        return Connection.objects.filter(
+            (Q(from_user=obj) | Q(to_user=obj)),
+            status='ACCEPTED'
+        ).count()
+
 class PostSerializer(serializers.ModelSerializer):
     datePosted = serializers.DateTimeField(format='%m-%d-%Y %H:%M:%S')
     class Meta:
         model = Post
-        fields = ['id', 'user','family','title', 'message', 'datePosted']
+        fields = ['id', 'user', 'family', 'title', 'message', 'datePosted', 'media_type', 'media_url']
         # Include other fields related to the Post model
 
-    
+class CommentSerializer(serializers.ModelSerializer):
+    datePosted = serializers.DateTimeField(format='%m-%d-%Y %H:%M:%S')
+    user_details = serializers.SerializerMethodField()
+    parent_user = serializers.SerializerMethodField()
+    replies = serializers.SerializerMethodField()
 
+    class Meta:
+        model = Comment
+        fields = ['id', 'user', 'post', 'message', 'datePosted', 'user_details', 'parent', 'parent_user', 'replies']
+
+    def get_user_details(self, obj):
+        return {
+            'id': obj.user.id,
+            'first_name': obj.user.first_name,
+            'last_name': obj.user.last_name,
+            'profile_picture': obj.user.profile_picture,
+        }
+
+    def get_parent_user(self, obj):
+        if obj.parent:
+            return {
+                'id': obj.parent.user.id,
+                'first_name': obj.parent.user.first_name,
+                'last_name': obj.parent.user.last_name,
+                'profile_picture': obj.parent.user.profile_picture,
+            }
+        return None
+
+    def get_replies(self, obj):
+        replies = obj.replies.all().order_by('datePosted')
+        return CommentSerializer(replies, many=True).data
 
 class FamilySerializer(serializers.ModelSerializer):
     invite_code = serializers.SerializerMethodField()
@@ -89,12 +160,13 @@ class NotificationSerializer(serializers.ModelSerializer):
     recipient_profile_picture = serializers.SerializerMethodField()
     family_joined_name = serializers.SerializerMethodField()
     post_mentioned_title = serializers.SerializerMethodField()
+    comment_message = serializers.SerializerMethodField()
     class Meta:
         model = Notification
         fields = ['id', 'notification_type', 'timestamp', 'sender', 'recipient', 
-                  'family_joined', 'post_mentioned', 
+                  'family_joined', 'post_mentioned', 'comment',
                   'sender_profile_picture', 'recipient_profile_picture', 
-                  'family_joined_name', 'post_mentioned_title']
+                  'family_joined_name', 'post_mentioned_title', 'comment_message']
         
     def get_sender_profile_picture(self, obj):
         # Assuming 'sender' is a UserProfile instance and has a profile_picture field
@@ -118,4 +190,10 @@ class NotificationSerializer(serializers.ModelSerializer):
         # Assuming 'post_mentioned' is a ForeignKey to a Post model
         if obj.post_mentioned:
             return obj.post_mentioned.title  # Return the title of the post
+        return None
+
+    def get_comment_message(self, obj):
+        # Return the comment message if it exists
+        if obj.comment:
+            return obj.comment.message
         return None

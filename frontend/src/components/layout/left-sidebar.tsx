@@ -1,5 +1,6 @@
 "use client";
 import { useUserContext } from "@/context/AuthContext";
+import { useNotifications } from "@/context/NotificationContext";
 import Link from "next/link";
 import Image from "next/image";
 
@@ -17,11 +18,22 @@ import Logout from "../logoutbtn";
 import { usePathname } from "next/navigation";
 import Categories from "./Categories";
 
-export default function LeftSideBar() {
+interface LeftSideBarProps {
+  onLinkClick?: (href: string) => void;
+}
+
+export default function LeftSideBar({ onLinkClick }: LeftSideBarProps) {
   const [isDropdownVisible, setIsDropdownVisible] = useState<boolean>(false);
+  const { unreadCount } = useNotifications();
   const { user, isAuthenticated } = useUserContext();
   const menuRef = useRef<HTMLDivElement | null>(null);
   const pathname = usePathname();
+
+  const handleClick = (href: string) => {
+    if (onLinkClick) {
+      onLinkClick(href);
+    }
+  };
 
   const handleClickOutside = (event: MouseEvent) => {
     if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
@@ -47,9 +59,10 @@ export default function LeftSideBar() {
   };
 
   return (
-    <div className="w-96 h-screen hidden lg:flex flex-col items-center space-y-6 border-r-2 ">
+    <div className="flex h-screen flex-col items-center space-y-6 border-r-2 ">
       <Link
         href={`/profile/${user?.id}`}
+        onClick={() => handleClick(`/profile/${user?.id}`)}
         className="flex items-center group hover:text-blue-500 space-x-2"
       >
         <Image
@@ -72,6 +85,7 @@ export default function LeftSideBar() {
           <li>
             <Link
               href="/timeline"
+              onClick={() => handleClick("/timeline")}
               className={`hover:text-blue-500 flex items-center space-x-3 ${
                 pathname === "/timeline" ? "text-blue-800" : ""
               }`}
@@ -83,6 +97,7 @@ export default function LeftSideBar() {
           <li>
             <Link
               href="/families"
+              onClick={() => handleClick("/families")}
               className={`hover:text-blue-500 flex items-center space-x-3 ${
                 pathname === "/families" ? "text-blue-800" : ""
               }`}
@@ -94,11 +109,19 @@ export default function LeftSideBar() {
           <li>
             <Link
               href="/notifications"
+              onClick={() => handleClick("/notifications")}
               className={`hover:text-blue-500 flex items-center space-x-3 ${
                 pathname === "/notifications" ? "text-blue-800" : ""
               }`}
             >
-              <FaBell className="text-2xl" />
+              <div className="relative">
+                <FaBell className="text-2xl" />
+                {unreadCount > 0 && (
+                  <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                    {unreadCount}
+                  </span>
+                )}
+              </div>
               <span>Notifications</span>
             </Link>
           </li>
@@ -111,6 +134,30 @@ export default function LeftSideBar() {
             >
               <FaUser className="text-2xl" />
               <span>Profile</span>
+            </Link>
+          </li>
+          <li>
+            <Link
+              href="/create-post"
+              className={`hover:text-blue-500 flex items-center space-x-3 ${
+                pathname === "/create-post" ? "text-blue-800" : ""
+              }`}
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth={2}
+                stroke="currentColor"
+                className="w-6 h-6"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M12 4.5v15m7.5-7.5h-15"
+                />
+              </svg>
+              <span>Create Post</span>
             </Link>
           </li>
           <li className="relative">
@@ -150,7 +197,7 @@ export default function LeftSideBar() {
           </li>
           <hr className="border-t-2 border-gray-300" />
 
-          <Categories />
+          <Categories onLinkClick={handleClick} />
         </ul>
       </nav>
     </div>

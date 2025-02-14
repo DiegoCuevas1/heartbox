@@ -2,9 +2,9 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { User } from "@/app/types/user";
-import { Family } from "@/app/types";
-import Link from "next/link";
 
+import Link from "next/link";
+import Image from "next/image";
 async function getData(familyId: string) {
   try {
     const res = await fetch(
@@ -50,10 +50,12 @@ export default function Members({ params }: { params: { id: string } }) {
       {data && data.length > 0 ? (
         data.map((user) => (
           <div key={user.id} className="flex items-center space-x-4">
-            <img
+            <Image
               src={"/images/default_profpic.png"}
               alt={`${user.first_name} ${user.last_name}'s Profile`}
               className="w-12 h-12 rounded-full object-cover"
+              width={48}
+              height={48}
             />
             <div>
               <Link href={`/profile/${user.id}`}>

@@ -16,28 +16,33 @@ const UserContext = createContext<AuthContextType | undefined>(undefined);
 
 export const useUserContext = () => {
   const context = useContext(UserContext);
-  if (!context) throw new Error("useUserContext must be used within a UserContextProvider");
+  if (!context)
+    throw new Error("useUserContext must be used within a UserContextProvider");
   return context;
 };
 
-export const UserContextProvider = ({ children }: { children: React.ReactNode }) => {
+export const UserContextProvider = ({
+  children,
+}: {
+  children: React.ReactNode;
+}) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   const loadUserFromStorage = () => {
     try {
-      const storedUser = localStorage.getItem('user');
+      const storedUser = localStorage.getItem("user");
       if (storedUser) {
         setUser(JSON.parse(storedUser));
       }
     } catch (error) {
-      console.error('Error loading user from storage:', error);
+      console.error("Error loading user from storage:", error);
     }
   };
 
   useEffect(() => {
-    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-    
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+
     const checkLogin = async () => {
       try {
         setIsLoading(true);
@@ -47,22 +52,22 @@ export const UserContextProvider = ({ children }: { children: React.ReactNode })
         });
 
         const data = await res.json();
-        
+
         if (res.ok && res.status === 202) {
           const userData = JSON.parse(data.data);
           const user: User = {
             id: userData.id,
             first_name: userData.f_name, // Map from f_name to first_name
-            last_name: userData.l_name,  // Map from l_name to last_name
+            last_name: userData.l_name, // Map from l_name to last_name
             profile_picture: userData.profilePic, // Map from profilePic to profile_picture
-            families: userData.families || [] // Initialize empty array if not provided
+            families: userData.families || [], // Initialize empty array if not provided
           };
-          
+
           setUser(user);
-          localStorage.setItem('user', JSON.stringify(user));
+          localStorage.setItem("user", JSON.stringify(user));
         } else {
           setUser(null);
-          localStorage.removeItem('user');
+          localStorage.removeItem("user");
         }
       } catch (error) {
         console.error("Error checking login:", error);
@@ -78,10 +83,10 @@ export const UserContextProvider = ({ children }: { children: React.ReactNode })
     setSignIn(() => {
       // This will be handled by checkLogin updating the user state
     });
-    
+
     setSignOut(() => {
       setUser(null);
-      localStorage.removeItem('user');
+      localStorage.removeItem("user");
     });
   }, []);
 

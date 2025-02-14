@@ -1,4 +1,4 @@
-'use client';
+"use client";
 import { Post } from "@/app/types/post";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -8,17 +8,20 @@ import { motion } from "framer-motion";
 
 async function getData(id: string | undefined) {
   try {
-    const res = await fetch(`http://localhost:8000/api/user/posts?userId=${id}`, {
-      method: "GET",
-      credentials: "include",
-    });
+    const res = await fetch(
+      `http://localhost:8000/api/user/posts?userId=${id}`,
+      {
+        method: "GET",
+        credentials: "include",
+      }
+    );
 
     if (!res.ok) {
-      throw Error('You are not in this family');
+      throw Error("You are not in this family");
     }
     return await res.json();
   } catch (error) {
-    console.error('Error:', error);
+    console.error("Error:", error);
     throw error;
   }
 }
@@ -35,8 +38,8 @@ export default function ProfileTimeline({ id }: { id: string }) {
         const fetchedData = await getData(id);
         setPosts(fetchedData);
       } catch (error) {
-        console.error('Error in fetchData:', error);
-        router.push('/families');
+        console.error("Error in fetchData:", error);
+        router.push("/families");
       } finally {
         setIsLoading(false);
       }
@@ -78,16 +81,16 @@ export default function ProfileTimeline({ id }: { id: string }) {
   }
 
   return (
-    <motion.div 
+    <motion.div
       className="flex-col flex"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.8 }}
     >
-      <div className={`flex-col mt-1 ${posts.length < 3 && 'pb-48'}`}>
+      <div className={`flex-col mt-1 ${posts.length < 3 && "pb-48"}`}>
         {posts.length === 0 ? (
-          <motion.div 
-            className="flex-col flex justify-center space-y-2 items-center text-2xl w-full pb-60"
+          <motion.div
+            className="flex-col flex justify-center space-y-2 items-center text-2xl w-full "
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
@@ -102,38 +105,22 @@ export default function ProfileTimeline({ id }: { id: string }) {
         ) : (
           <>
             {posts.map((post, index) => (
-              <motion.div 
-                key={index} 
-                className="flex-col mt-2"
+              <motion.div
+                key={index}
+                className="flex-col justify-center mt-2"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ 
+                transition={{
                   duration: 0.8,
-                  delay: index * 0.15
+                  delay: index * 0.15,
                 }}
               >
                 <TimelinePostCard post={post} />
               </motion.div>
             ))}
-            <motion.div 
-              className="flex justify-center items-center mt-4"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ 
-                duration: 0.8,
-                delay: posts.length * 0.15
-              }}
-            >
-              <Link href="/create-post">
-                <button className="p-2 bg-[#4D94D0] w-36 text-xl font-loves font-bold text-white mt-3 rounded-lg shadow-[0_20px_10px_-15px_rgba(0,0,0,.3)] mx-auto hover:scale-125 active:scale-90 transition-all">
-                  Create Post
-                </button>
-              </Link>
-            </motion.div>
           </>
         )}
       </div>
     </motion.div>
   );
 }
-

@@ -19,12 +19,14 @@ from rest_framework.parsers import JSONParser
 from rest_framework.decorators import api_view,authentication_classes, permission_classes
 from rest_framework.response import Response
 from rest_framework import status
+from django.db.models import Q  # make sure you import Q if you use it
 
 from website import settings
 
-from .models import Family, Notification, UserProfile, Post, Connection
-from .serializers import FamilySerializer, NotificationSerializer, UserProfileSerializer, PostSerializer
+from .models import Family, Notification, UserProfile, Post, Connection, Comment, Category
+from .serializers import FamilySerializer, NotificationSerializer, UserProfileSerializer, PostSerializer, CommentSerializer
 from .utils import is_name_valid
+
 
 
 @api_view(['POST'])
@@ -264,11 +266,50 @@ def leave_family(request):
 @api_view(['GET', 'POST'])
 @authentication_classes([SessionAuthentication, BasicAuthentication])
 @permission_classes([IsAuthenticated])
-def post(request):
+def post(request, category=None):
     if request.method == 'GET':
         user_id = request.GET.get('userId')
         post_id = request.GET.get('postId')
         family_id = request.GET.get('familyId')
+
+        if category:
+            # Filter posts by category name
+            try:
+                category_obj = Category.objects.get(name__iexact=category)
+                posts = Post.objects.filter(categories=category_obj).order_by('-datePosted')
+                serialized_posts = []
+                for post in posts:
+                    post_serialized = PostSerializer(post)
+                    family = Family.objects.get(id=post_serialized.data['family'])
+                    serialized_family = FamilySerializer(family, context={'request': request})
+                    user_details = {
+                        'id': post.user.id,
+                        'first_name': post.user.first_name,
+                        'last_name': post.user.last_name,
+                        'profile_picture': post.user.profile_picture,
+                    }
+                    family_details = {
+                        'id': serialized_family.data['id'],
+                        'family_name': serialized_family.data['family_name'],
+                        'family_description': serialized_family.data['family_description'],
+                    }
+                    post_data = {
+                        'id': post_serialized.data['id'],
+                        'title': post_serialized.data['title'],
+                        'user': post_serialized.data['user'],
+                        'message': post_serialized.data['message'],
+                        'datePosted': post_serialized.data['datePosted'],
+                        'family_details': family_details,
+                        'user_details': user_details,
+                        'media_type': post_serialized.data.get('media_type'),
+                        'media_url': post_serialized.data.get('media_url'),
+                        'categories': [{'id': cat.id, 'name': cat.name} for cat in post.categories.all()]
+                    }
+                    serialized_posts.append(post_data)
+                return Response(serialized_posts, status=200)
+            except Category.DoesNotExist:
+                return Response([], status=200)
+
         if post_id:
             if Post.objects.filter(id=post_id).exists():
                 post = Post.objects.get(id=post_id)
@@ -293,6 +334,9 @@ def post(request):
                     'message': post_serialized.data['message'],
                     'datePosted': post_serialized.data['datePosted'],
                     'family_details':family_details,
+                    'media_type': post_serialized.data.get('media_type'),
+                    'media_url': post_serialized.data.get('media_url'),
+                    'categories': [{'id': cat.id, 'name': cat.name} for cat in post.categories.all()]
                 }
                 return Response(serializer_data, status=200)
             else:
@@ -328,7 +372,10 @@ def post(request):
                             'message': post_serialized.data['message'],
                             'datePosted': post_serialized.data['datePosted'],
                             'family_details':family_details,
-                            'user_details': user_details
+                            'user_details': user_details,
+                            'media_type': post_serialized.data.get('media_type'),
+                            'media_url': post_serialized.data.get('media_url'),
+                            'categories': [{'id': cat.id, 'name': cat.name} for cat in post.categories.all()]
                         }
                         serialized_posts.append(post_data)
 
@@ -371,7 +418,10 @@ def post(request):
                         'message': post_serialized.data['message'],
                         'datePosted': post_serialized.data['datePosted'],
                         'family_details': family_details,
-                        'user_details': user_details
+                        'user_details': user_details,
+                        'media_type': post_serialized.data.get('media_type'),
+                        'media_url': post_serialized.data.get('media_url'),
+                        'categories': [{'id': cat.id, 'name': cat.name} for cat in post.categories.all()]
                     }
                     serialized_posts.append(post_data)
 
@@ -410,7 +460,10 @@ def post(request):
                 'message': post_serialized.data['message'],
                 'datePosted': post_serialized.data['datePosted'],
                 'family_details':family_details,
-                'user_details': user_details
+                'user_details': user_details,
+                'media_type': post_serialized.data.get('media_type'),
+                'media_url': post_serialized.data.get('media_url'),
+                'categories': [{'id': cat.id, 'name': cat.name} for cat in post.categories.all()]
             }
             serialized_posts.append(post_data)
 
@@ -418,38 +471,68 @@ def post(request):
 
 
     if request.method == 'POST':
-       
-        # data = request.data
         try:
-            # Assuming email is passed in the request data
             user_profile = UserProfile.objects.get(id=request.user.id)
         except UserProfile.DoesNotExist:
             return Response({'error': 'User profile does not exist'}, status=status.HTTP_404_NOT_FOUND)
         
-        data= request.data
+        # Create a mutable copy of the data
+        data = request.data.copy()
         data['user'] = request.user.id
         
         converted_tz = pytz.timezone('US/Eastern')
-        # Convert the current time to EST
-       
         data['datePosted'] = datetime.now(converted_tz)
-        serializer = PostSerializer(data=data,context={'request':request})      
-        
-        # serializer = PostSerializer(data=request.data,context={'request':request})
+
+        # Handle media upload
+        media_file = request.FILES.get('media')
+        media_type = data.get('media_type')
+        media_url = None
+
+        if media_file and media_type:
+            try:
+                upload_options = {
+                    'folder': 'post_media',
+                    'resource_type': 'auto'
+                }
+                
+                upload_result = cloudinary.uploader.upload(media_file, **upload_options)
+                media_url = upload_result.get('public_id')
+                
+                if not media_url:
+                    return Response("Failed to upload media", status=status.HTTP_400_BAD_REQUEST)
+                
+            except Exception as e:
+                return Response(f"Error uploading media: {str(e)}", status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        # Handle categories
+        category_name = data.get('category')
+        categories = None
+        if category_name and category_name.lower() != 'none':
+            # Get or create the category
+            category, created = Category.objects.get_or_create(
+                name=category_name,
+                defaults={'description': f'Category for {category_name} posts'}
+            )
+            categories = [category]
+
+        serializer = PostSerializer(data=data, context={'request': request})
         
         if serializer.is_valid():
-            family_id=data['familyId']
             try:
-                family = get_object_or_404(Family, id=family_id)
+                family = get_object_or_404(Family, id=data['familyId'])
             except Family.DoesNotExist:
                 return Response({'error': 'Family does not exist'}, status=status.HTTP_404_NOT_FOUND)
+
             post = Post.objects.create_post(
-                title=request.data['title'],
-                message=request.data['description'],
+                title=data.get('title'),
+                message=data.get('description'),
                 user=UserProfile.objects.get(id=request.user.id),
-                family = Family.objects.get(id=request.data['familyId']),
-                date_posted = data['datePosted']
-            ) 
+                family=Family.objects.get(id=data['familyId']),
+                date_posted=data['datePosted'],
+                media_type=media_type,
+                media_url=media_url,
+                categories=categories
+            )
             return Response('Your post was successfully created', status=status.HTTP_201_CREATED)
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -482,9 +565,11 @@ def get_user_details(request):
 @api_view(['GET'])
 @authentication_classes([SessionAuthentication, BasicAuthentication])
 @permission_classes([IsAuthenticated])
-def notification(request):  # Accept the notificationId as a parameter
+def notification(request):
     if request.method == 'GET':
         notificationId = request.GET.get('notificationId')
+        unread_only = request.GET.get('unread_only', 'false').lower() == 'true'
+
         if notificationId:  # Check if notificationId is provided
             try:
                 notification = Notification.objects.get(id=notificationId)
@@ -506,24 +591,31 @@ def notification(request):  # Accept the notificationId as a parameter
                     'id': serializer.data['id'],
                     'notification_type': serializer.data['notification_type'],
                     'timestamp': serializer.data['timestamp'],
-                    'family_details':family_details
+                    'family_details':family_details,
+                    'connection_id': str(notification.connection.id) if notification.connection else None,
+                    'comment_message': notification.comment.message if notification.comment else None,
+                    'post_id': notification.post_mentioned.id if notification.post_mentioned else None
                 }
                 return Response(notification_details, status=status.HTTP_200_OK)
             except Notification.DoesNotExist:
                 return Response({'error': 'Notification not found'}, status=status.HTTP_404_NOT_FOUND)
 
-        # If notificationId is not provided, retrieve all notifications for the user
-        notifications = Notification.objects.filter(recipient_id=request.user.id)
+        # Get notifications for the user
+        notifications_query = Notification.objects.filter(recipient_id=request.user.id)
+        if unread_only:
+            notifications_query = notifications_query.filter(read=False)
+        
+        notifications = notifications_query.order_by('-timestamp')
         serialized_notifications = []
         for notification in notifications:
             serializer = NotificationSerializer(notification)
-            family_details=None
+            family_details = None
             if serializer.data['family_joined']:
                 family = Family.objects.get(id=serializer.data['family_joined'])
-                family_details={
-                    'id':family.id,
-                    'family_name':family.family_name,
-                    'family_picture':family.family_picture
+                family_details = {
+                    'id': family.id,
+                    'family_name': family.family_name,
+                    'family_picture': family.family_picture
                 }
             sender_details = {
                 'id': notification.sender.id,
@@ -536,7 +628,11 @@ def notification(request):  # Accept the notificationId as a parameter
                 'notification_type': serializer.data['notification_type'],
                 'timestamp': serializer.data['timestamp'],
                 'sender_details': sender_details,
-                'family_details':family_details
+                'family_details': family_details,
+                'connection_id': str(notification.connection.id) if notification.connection else None,
+                'comment_message': notification.comment.message if notification.comment else None,
+                'post_id': notification.post_mentioned.id if notification.post_mentioned else None,
+                'read': notification.read
             }
             serialized_notifications.append(notification_details)
 
@@ -551,26 +647,80 @@ def notification(request):  # Accept the notificationId as a parameter
 @permission_classes([IsAuthenticated])
 def notification_count(request):
     if request.method == 'GET':
-        # Retrieve the count of notifications for the current user
-        notification_count = Notification.objects.filter(recipient_id=request.user.id).count()
+        # Only count unread notifications for the current user
+        notification_count = Notification.objects.filter(
+            recipient_id=request.user.id,
+            read=False
+        ).count()
         return Response({'count': notification_count}, status=status.HTTP_200_OK)
     return Response('Invalid Method Request', status=status.HTTP_403_FORBIDDEN)
 
+@api_view(['POST'])
+@authentication_classes([SessionAuthentication, BasicAuthentication])
+@permission_classes([IsAuthenticated])
+def mark_notification_read(request, notification_id):
+    try:
+        notification = Notification.objects.get(
+            id=notification_id,
+            recipient=request.user
+        )
+        notification.mark_as_read()
+        return Response(status=status.HTTP_200_OK)
+    except Notification.DoesNotExist:
+        return Response(
+            {"error": "Notification not found"},
+            status=status.HTTP_404_NOT_FOUND
+        )
+    except Exception as e:
+        return Response(
+            {"error": str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+@api_view(['POST'])
+@authentication_classes([SessionAuthentication, BasicAuthentication])
+@permission_classes([IsAuthenticated])
+def mark_all_notifications_read(request):
+    try:
+        Notification.objects.filter(
+            recipient=request.user,
+            read=False
+        ).update(read=True)
+        return Response({"message": "All notifications marked as read"}, status=status.HTTP_200_OK)
+    except Exception as e:
+        return Response(
+            {"error": str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
 
 @api_view(['GET'])
-@authentication_classes([SessionAuthentication,BasicAuthentication])
+@authentication_classes([SessionAuthentication, BasicAuthentication])
 @permission_classes([IsAuthenticated])
 def connections(request):
     if request.method == 'GET':
-        user = request.user  # This should be an instance of UserProfile# Retrieve connections where the user is the initiator (from_user)
-        outgoing_connections = user.connections.all()
-        incoming_connections = user.connected_to.all()
+        user = request.user
 
-        all_connections = (outgoing_connections | incoming_connections).distinct()
+        # Get all accepted connection objects (from either side)
+        accepted_connections = Connection.objects.filter(
+            Q(from_user=user) | Q(to_user=user),
+            status='ACCEPTED'
+        )
 
-        serializer = UserProfileSerializer(all_connections, many=True)
+        # Gather the "other" user for each accepted connection
+        connected_users = []
+        for connection in accepted_connections:
+            if connection.from_user == user:
+                connected_users.append(connection.to_user)
+            else:
+                connected_users.append(connection.from_user)
+
+        # Remove potential duplicates (if any)
+        connected_users = list(set(connected_users))
+
+        serializer = UserProfileSerializer(connected_users, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
-    
+    return Response({'error': 'Invalid Method Request'}, status=status.HTTP_403_FORBIDDEN)
+
 @api_view(['POST'])
 @authentication_classes([SessionAuthentication, BasicAuthentication])
 @permission_classes([IsAuthenticated])
@@ -611,21 +761,45 @@ def respond_to_connection_request(request):
     data = request.data
     connection_id = data.get('connectionId')  # The ID of the connection to respond to
     action = data.get('action')  # Either 'accept' or 'decline'
+    notification_id = data.get('notificationId')  # Optional: the ID of the original connection request notification
 
     if not connection_id or not action:
         return Response({"error": "connectionId and action are required"}, status=status.HTTP_400_BAD_REQUEST)
 
     try:
         connection = Connection.objects.get(id=connection_id)
-        
     except Connection.DoesNotExist:
         return Response({"error": "Connection not found"}, status=status.HTTP_404_NOT_FOUND)
 
+    # Ensure that the current user is the intended recipient for the connection request.
+    if connection.to_user != request.user:
+        return Response({"error": "You are not authorized to respond to this connection request."}, 
+                        status=status.HTTP_403_FORBIDDEN)
+
     if action == 'accept':
-        connection.accept()  # Call the accept method to update the status
-        return Response({"message": "Connection request accepted."}, status=status.HTTP_200_OK)
+        connection.accept()  # Accepts the connection request
+
+        # Remove the original connection request notification if its ID was provided
+        if notification_id:
+            try:
+                original_notification = Notification.objects.get(id=notification_id, recipient=request.user)
+                original_notification.delete()
+            except Notification.DoesNotExist:
+                pass  # If not found, just continue
+
+        # Create notifications for both users about the accepted connection
+        Notification.objects.create_connection_accepted_notification(
+            sender=connection.from_user,
+            recipient=connection.to_user
+        )
+        Notification.objects.create_connection_accepted_notification(
+            sender=connection.to_user,
+            recipient=connection.from_user
+        )
+
+        return Response({"message": "Connection request accepted and notifications sent."}, status=status.HTTP_200_OK)
     elif action == 'decline':
-        connection.decline()  # Call the decline method to update the status
+        connection.decline()  # Decline the connection request
         return Response({"message": "Connection request declined."}, status=status.HTTP_200_OK)
     else:
         return Response({"error": "Invalid action. Use 'accept' or 'decline'."}, status=status.HTTP_400_BAD_REQUEST)
@@ -662,3 +836,147 @@ def cancel_connection_request(request):
     ).delete()
 
     return Response({"message": "Connection request canceled and notification deleted."}, status=status.HTTP_200_OK)
+
+@api_view(['GET', 'POST'])
+@authentication_classes([SessionAuthentication, BasicAuthentication])
+@permission_classes([IsAuthenticated])
+def comments(request):
+    if request.method == 'GET':
+        post_id = request.GET.get('postId')
+        if not post_id:
+            return Response("Post ID is required", status=400)
+        
+        try:
+            post = Post.objects.get(id=post_id)
+            # Only get top-level comments (those without parents)
+            comments = post.comments.filter(parent=None)
+            serialized_comments = []
+            
+            for comment in comments:
+                comment_serialized = CommentSerializer(comment)
+                comment_data = comment_serialized.data
+                serialized_comments.append(comment_data)
+            
+            return Response(serialized_comments, status=200)
+        except Post.DoesNotExist:
+            return Response("Post not found", status=404)
+
+    if request.method == 'POST':
+        try:
+            data = request.data
+            post_id = data.get('postId')
+            message = data.get('message')
+            parent_id = data.get('parentId')  # Get parent comment ID if it exists
+            
+            if not post_id or not message:
+                return Response("Post ID and message are required", status=400)
+            
+            post = Post.objects.get(id=post_id)
+            parent_comment = None
+            if parent_id:
+                try:
+                    parent_comment = Comment.objects.get(id=parent_id)
+                except Comment.DoesNotExist:
+                    return Response("Parent comment not found", status=404)
+            
+            converted_tz = pytz.timezone('US/Eastern')
+            date_posted = datetime.now(converted_tz)
+            
+            comment = Comment.objects.create_comment(
+                message=message,
+                user=request.user,
+                post=post,
+                date_posted=date_posted,
+                parent=parent_comment
+            )
+            
+            # Add a notification for the original poster (if the commenter is not the post owner)
+            # Also notify the parent comment owner if this is a reply
+            if parent_comment and parent_comment.user != request.user:
+                Notification.objects.create(
+                    recipient=parent_comment.user,
+                    sender=request.user,
+                    notification_type="COMMENT",
+                    post_mentioned=post,
+                    comment=comment
+                )
+            elif post.user != request.user:
+                Notification.objects.create(
+                    recipient=post.user,
+                    sender=request.user,
+                    notification_type="COMMENT",
+                    post_mentioned=post,
+                    comment=comment
+                )
+            
+            serializer = CommentSerializer(comment)
+            return Response(serializer.data, status=201)
+            
+        except Post.DoesNotExist:
+            return Response("Post not found", status=404)
+        except Exception as e:
+            return Response(str(e), status=400)
+    
+    return Response('Invalid Method Request', status=403)
+
+@api_view(['DELETE'])
+@authentication_classes([SessionAuthentication, BasicAuthentication])
+@permission_classes([IsAuthenticated])
+def remove_connection(request):
+    data = request.data
+    user_id = data.get('userId')  # The user ID of the connection to remove
+
+    if not user_id:
+        return Response({"error": "userId is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        other_user = UserProfile.objects.get(id=user_id)
+    except UserProfile.DoesNotExist:
+        return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    # Find and delete the connection from either direction
+    connection = Connection.objects.filter(
+        (Q(from_user=request.user) & Q(to_user=other_user)) |
+        (Q(from_user=other_user) & Q(to_user=request.user)),
+        status='ACCEPTED'
+    ).first()
+
+    if not connection:
+        return Response({"error": "No active connection found."}, status=status.HTTP_404_NOT_FOUND)
+
+    # Delete any connection-related notifications between these users
+    Notification.objects.filter(
+        (Q(sender=request.user) & Q(recipient=other_user)) |
+        (Q(sender=other_user) & Q(recipient=request.user)),
+        notification_type__in=['CONNECTION_REQUEST', 'CONNECTION_ACCEPTED']
+    ).delete()
+
+    # Delete the connection
+    connection.delete()
+
+    return Response({"message": "Connection removed successfully."}, status=status.HTTP_200_OK)
+
+@api_view(['GET'])
+@authentication_classes([SessionAuthentication, BasicAuthentication])
+@permission_classes([IsAuthenticated])
+def categories(request):
+    if request.method == 'GET':
+        categories = Category.objects.all()
+        return Response([{'id': cat.id, 'name': cat.name, 'description': cat.description} for cat in categories], status=200)
+
+@api_view(['POST'])
+@authentication_classes([SessionAuthentication, BasicAuthentication])
+@permission_classes([IsAuthenticated])
+def create_category(request):
+    if request.method == 'POST':
+        name = request.data.get('name')
+        description = request.data.get('description', '')
+        
+        if not name:
+            return Response({'error': 'Category name is required'}, status=400)
+            
+        if Category.objects.filter(name=name).exists():
+            return Response({'error': 'Category already exists'}, status=400)
+            
+        category = Category.objects.create(name=name, description=description)
+        return Response({'id': category.id, 'name': category.name, 'description': category.description}, status=201)
