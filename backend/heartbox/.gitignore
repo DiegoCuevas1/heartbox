@@ -25,7 +25,7 @@ local_settings.py
 venv/
 
 # Ignore management folder
-backend/heartbox/api/management/commands/
+heartbox/api/management/
 
 # Ignore migrations folder
-backend/heartbox/api/migrations/
+heartbox/api/migrations/
