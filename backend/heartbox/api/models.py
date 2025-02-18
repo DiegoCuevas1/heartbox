@@ -334,6 +334,7 @@ class Notification(models.Model):
             ('CONNECTION_REQUEST','Connection Request'),
             ('CONNECTION_ACCEPTED', 'Connection Accepted'),
             ('COMMENT', 'Comment'),
+            ('LIKE', 'Like'),
             # Add more notification types as needed
         )
     id = models.AutoField(primary_key=True)

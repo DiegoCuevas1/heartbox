@@ -1,9 +1,9 @@
 "use client";
 import { Post } from "@/app/types/post";
-import PostCard from "@/components/postCard";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
+import TimelineCard from "@/app/timeline/timelineCard";
 
 export default function CategoryPage({
   params,
@@ -90,7 +90,7 @@ export default function CategoryPage({
           posts.map((post) => (
             <motion.div key={post.id} variants={item}>
               <Link href={`/posts/${post.id}`}>
-                <PostCard post={post} />
+                <TimelineCard post={post} />
               </Link>
             </motion.div>
           ))

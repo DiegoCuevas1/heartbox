@@ -55,17 +55,55 @@ INSTALLED_APPS = [
     'allauth.account',
     'allauth.socialaccount',
     'allauth.socialaccount.providers.google',
+    'allauth.socialaccount.providers.facebook',
+    'allauth.socialaccount.providers.github',
     'cloudinary',
     'cloudinary_storage',
 ]
 
-SOCIALACCOUNT_PROVIDERS={
-    "google":{
-        'SCOPE':[
-            "profile","email"
+SOCIALACCOUNT_PROVIDERS = {
+    'google': {
+        'APP': {
+            'client_id': os.getenv('GOOGLE_CLIENT_ID'),
+            'secret': os.getenv('GOOGLE_CLIENT_SECRET'),
+            'key': ''
+        },
+        'SCOPE': [
+            'profile',
+            'email',
         ],
-        'AUTH_PARAMS':{"access_type":"online"}
-    }
+        'AUTH_PARAMS': {
+            'access_type': 'online',
+        }
+    },
+    'facebook': {
+        'APP': {
+            'client_id': os.getenv('FACEBOOK_CLIENT_ID'),
+            'secret': os.getenv('FACEBOOK_CLIENT_SECRET'),
+            'key': ''
+        },
+        'METHOD': 'oauth2',
+        'SCOPE': ['email', 'public_profile'],
+        'FIELDS': [
+            'id',
+            'email',
+            'name',
+            'first_name',
+            'last_name',
+            'picture'
+        ],
+    },
+    'github': {
+        'APP': {
+            'client_id': os.getenv('GITHUB_CLIENT_ID'),
+            'secret': os.getenv('GITHUB_CLIENT_SECRET'),
+            'key': ''
+        },
+        'SCOPE': [
+            'user',
+            'email',
+        ],
+    },
 }
 
 LOGIN_REDIRECT_URL = '/'
@@ -151,9 +189,10 @@ DATABASES = {
     }
 }
 
-AUTHENTICATION_BACKENDS = [
+AUTHENTICATION_BACKENDS = (
     'django.contrib.auth.backends.ModelBackend',
-]
+    'allauth.account.auth_backends.AuthenticationBackend'
+)
 # Password validation
 # https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators
 
@@ -209,10 +248,14 @@ CLOUDINARY_STORAGE = {
 }
 DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 
-AUTHENTICATION_BACKENDS = (
-    "django.contrib.auth.backends.ModelBackend",
-    "allauth.account.auth_backends.AuthenticationBackend"
-)
+# Social Auth settings
+ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_UNIQUE_EMAIL = True
+ACCOUNT_USERNAME_REQUIRED = False
+ACCOUNT_AUTHENTICATION_METHOD = 'email'
+ACCOUNT_EMAIL_VERIFICATION = 'mandatory'
+SOCIALACCOUNT_EMAIL_VERIFICATION = 'none'
+SOCIALACCOUNT_AUTO_SIGNUP = True
 
 LOGIN_REDIRECT_URL="/"
 LOGOUT_REDIRECT_URL="/"

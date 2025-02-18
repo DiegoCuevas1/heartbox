@@ -32,21 +32,21 @@ async function getData() {
     if (!res.ok) {
       // Handle error cases
       console.log("Failed Fetch");
-      return Error();
+      return []; // Return an empty array on error
     }
 
     const data = await res.json();
     // Process the data as needed
 
-    return data; // Add this line to return the data from the function
+    return data; // Return the fetched data
   } catch (error: any) {
     console.error("Error:", error.message);
-    throw error; // Rethrow the error to be caught by the calling code
+    return []; // Return an empty array on error
   }
 }
 
 export default function CardGenerator() {
-  const [data, setData] = useState<Family[] | null>(null);
+  const [data, setData] = useState<Family[]>([]); // Initialize as an empty array
   const [isLoading, setIsLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const familiesPerPage = 9;
@@ -71,11 +71,10 @@ export default function CardGenerator() {
   // Calculate the index of the first and last family to display
   const indexOfLastFamily = currentPage * familiesPerPage;
   const indexOfFirstFamily = indexOfLastFamily - familiesPerPage;
-  const currentFamilies =
-    data?.slice(indexOfFirstFamily, indexOfLastFamily) || [];
+  const currentFamilies = data.slice(indexOfFirstFamily, indexOfLastFamily); // Safe to call slice now
 
   // Calculate total pages
-  const totalPages = Math.ceil((data?.length || 0) / familiesPerPage);
+  const totalPages = Math.ceil(data.length / familiesPerPage);
 
   const handleNextPage = () => {
     if (currentPage < totalPages) {
@@ -107,7 +106,7 @@ export default function CardGenerator() {
     );
   }
 
-  if (!data || data.length === 0) {
+  if (data.length === 0) {
     return (
       <motion.div
         className="text-center text-xl"

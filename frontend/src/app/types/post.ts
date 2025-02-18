@@ -16,6 +16,8 @@ type Post = {
   media_url?: string | null;
   categories?: Category[];
   comments?: Comment[];
+  likes_count: number;
+  is_liked: boolean;
   // Add other post details here if needed
 };
 

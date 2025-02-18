@@ -1,7 +1,28 @@
+"use client";
 import Link from "next/link";
 import CardGenerator from "./cardGenerator";
+import { useUserContext } from "@/context/AuthContext";
+import { redirect } from "next/navigation";
+import { useEffect, useState } from "react";
 
 export default function Home() {
+  const { isAuthenticated, isLoading } = useUserContext();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Wait for authentication to be checked and component to be mounted
+  if (!mounted || isLoading) {
+    return null;
+  }
+
+  // Redirect if not authenticated
+  if (!isAuthenticated) {
+    redirect("/auth/sign-in");
+  }
+
   return (
     <div className="flex flex-col bg-main">
       <h3 className="mx-auto text-4xl mb-4 text-default border-links font-loves font-bold border-b-4">

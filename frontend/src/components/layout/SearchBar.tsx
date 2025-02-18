@@ -20,7 +20,6 @@ const SearchBar = () => {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    // Implement your search logic here
     console.log("Searching for:", searchTerm);
   };
 
@@ -34,18 +33,17 @@ const SearchBar = () => {
         onFocus={() => {
           setIsFocused(true);
           setPlaceholder("Search for Relics, Heartboxes, People");
-        }} // Change placeholder on focus
+        }}
         onBlur={() => {
           setIsFocused(false);
           setPlaceholder("Search...");
-        }} // Reset placeholder on blur
-        className={`p-2 border transition-all duration-150 focus:w-80 group border-gray-300 rounded-l-md ${getWidthClass(searchTerm)}`} // Dynamic width class
-        // Inline style for dynamic width
+        }}
+        className={`p-2 border transition-all duration-150 focus:w-80 group border-gray-300 rounded-l-md ${getWidthClass(searchTerm)}`}
       />
       <button
         type="submit"
         className={`flex items-center justify-center p-2 border-gray-300 active:border-black border rounded-r-md transition-transform duration-150 active:scale-90`} // Scale effect
-        onSubmit={handleSearch} // Handle button click
+        onSubmit={handleSearch}
       >
         <BiSearch className="text-gray-900 text-3xl" />
       </button>

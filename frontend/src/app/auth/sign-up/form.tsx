@@ -5,11 +5,12 @@ import toast from "react-hot-toast";
 import Link from "next/link";
 import { sanitize_res_msg } from "@/utils/utilFunctions";
 import LoadingOverlay from "@/components/LoadingOverlay";
+import { FaGoogle, FaFacebook, FaGithub } from "react-icons/fa";
 
 function FormComponent() {
   const [isLoading, setIsLoading] = useState(false);
   const [showLoadingOverlay, setShowLoadingOverlay] = useState(false);
-  
+
   const [formData, setFormData] = useState({
     email: "",
     firstName: "",
@@ -54,21 +55,19 @@ function FormComponent() {
     setStep(step - 1);
   };
 
-  
-
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
-    
+
     const formData = new FormData(e.currentTarget);
-    
+
     // Validate email
     if (!validateEmail(formData.get("email") as string)) {
       setIsLoading(false);
       toast.error("Invalid email format. Please try again.");
       return;
     }
-    
+
     // Validate passwords match
     if (formData.get("password") !== formData.get("confirm_password")) {
       setIsLoading(false);
@@ -79,7 +78,7 @@ function FormComponent() {
     // Format birth date
     const birthDate = new Date(formData.get("birthDate") as string);
     formData.set("birthDate", birthDate.toISOString().slice(0, -14));
-    
+
     // Remove confirm password as it's not needed in the API
     formData.delete("confirm_password");
 
@@ -107,21 +106,62 @@ function FormComponent() {
     }
   };
 
-  
+  const handleSocialLogin = (provider: string) => {
+    window.location.href = `http://localhost:8000/accounts/${provider}/login/`;
+  };
 
   return (
     <>
       {showLoadingOverlay && <LoadingOverlay />}
       <div className="text-black px-10 py-6">
+        <h2 className="pb-6 flex font-loves font-bold text-3xl justify-center items-center text-center">
+          <span className="border-b-2 border-[#D31c60]">Sign Up</span>
+        </h2>
+
+        {/* Social Login Buttons */}
+        <div className="flex flex-col gap-4 mb-8">
+          <button
+            onClick={() => handleSocialLogin("google")}
+            className="flex items-center justify-center gap-2 w-full py-2 px-4 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+          >
+            <FaGoogle className="text-[#DB4437]" />
+            <span>Continue with Google</span>
+          </button>
+
+          <button
+            onClick={() => handleSocialLogin("facebook")}
+            className="flex items-center justify-center gap-2 w-full py-2 px-4 bg-[#4267B2] text-white border border-[#4267B2] rounded-lg hover:bg-[#365899] transition-colors"
+          >
+            <FaFacebook />
+            <span>Continue with Facebook</span>
+          </button>
+
+          <button
+            onClick={() => handleSocialLogin("github")}
+            className="flex items-center justify-center gap-2 w-full py-2 px-4 bg-[#24292e] text-white border border-[#24292e] rounded-lg hover:bg-[#1b1f23] transition-colors"
+          >
+            <FaGithub />
+            <span>Continue with GitHub</span>
+          </button>
+        </div>
+
+        <div className="relative mb-8">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-gray-300"></div>
+          </div>
+          <div className="relative flex justify-center text-sm">
+            <span className="px-2 bg-[#eecfe0] text-gray-500">
+              Or sign up with email
+            </span>
+          </div>
+        </div>
+
         <form
           className="flex flex-col items-center justify-center mx-auto max-w-md"
           onSubmit={handleSubmit}
         >
           {step === 1 && (
             <>
-              <h2 className="pb-6 flex font-loves font-bold text-3xl justify-center items-center text-center">
-                <span className="border-b-2 border-[#D31c60]">Sign Up</span>
-              </h2>
               <div className="flex flex-col mb-4">
                 <label htmlFor="email" className="font-loves font-bold mb-1">
                   Email<span className="text-red-500">*</span>:
@@ -139,7 +179,10 @@ function FormComponent() {
                 />
               </div>
               <div className="flex flex-col mb-4">
-                <label htmlFor="password" className=" font-loves font-bold mb-1">
+                <label
+                  htmlFor="password"
+                  className=" font-loves font-bold mb-1"
+                >
                   Password<span className="text-red-500">*</span>:
                 </label>
                 <input
@@ -155,7 +198,10 @@ function FormComponent() {
                 />
               </div>
               <div className="flex flex-col mb-4">
-                <label htmlFor="password" className=" font-loves font-bold mb-1">
+                <label
+                  htmlFor="password"
+                  className=" font-loves font-bold mb-1"
+                >
                   Confirm Password<span className="text-red-500">*</span>:
                 </label>
                 <input
@@ -181,11 +227,11 @@ function FormComponent() {
 
           {step === 2 && (
             <>
-              <h2 className="pb-6 flex font-loves font-bold text-3xl justify-center items-center text-center">
-                <span className="border-b-2 border-[#D31c60]">Personal Info</span>
-              </h2>
               <div className="flex flex-col mb-4">
-                <label htmlFor="firstName" className="font-loves font-bold mb-1">
+                <label
+                  htmlFor="firstName"
+                  className="font-loves font-bold mb-1"
+                >
                   First Name<span className="text-red-500">*</span>:
                 </label>
                 <input
@@ -201,7 +247,10 @@ function FormComponent() {
                 />
               </div>
               <div className="flex flex-col mb-4">
-                <label htmlFor="lastName" className=" font-loves font-bold mb-1">
+                <label
+                  htmlFor="lastName"
+                  className=" font-loves font-bold mb-1"
+                >
                   Last Name<span className="text-red-500">*</span>:
                 </label>
                 <input
@@ -217,7 +266,10 @@ function FormComponent() {
                 />
               </div>
               <div className="flex flex-col mb-4">
-                <label htmlFor="birthDate" className=" font-loves font-bold mb-1">
+                <label
+                  htmlFor="birthDate"
+                  className=" font-loves font-bold mb-1"
+                >
                   Birth Date<span className="text-red-500">*</span>:
                 </label>
                 <input
@@ -249,7 +301,10 @@ function FormComponent() {
                 />
               </div>
               <div className="flex flex-col mb-4">
-                <label htmlFor="birthDate" className=" font-loves font-bold mb-1">
+                <label
+                  htmlFor="birthDate"
+                  className=" font-loves font-bold mb-1"
+                >
                   PIN<span className="text-red-500">*</span>:
                 </label>
                 <input

@@ -6,7 +6,6 @@ import Image from "next/image";
 
 import {
   FaAngleDown,
-  FaAngleUp,
   FaBell,
   FaEllipsisH,
   FaHeart,
@@ -59,11 +58,11 @@ export default function LeftSideBar({ onLinkClick }: LeftSideBarProps) {
   };
 
   return (
-    <div className="flex h-screen flex-col items-center space-y-6 border-r-2 ">
+    <div className="flex h-full flex-col items-center border-r-2  ">
       <Link
         href={`/profile/${user?.id}`}
         onClick={() => handleClick(`/profile/${user?.id}`)}
-        className="flex items-center group hover:text-blue-500 space-x-2"
+        className="flex items-center group hover:text-blue-500 space-x-2  "
       >
         <Image
           src={`https://res.cloudinary.com/dcyk5quni/${user?.profile_picture}`}
@@ -79,8 +78,7 @@ export default function LeftSideBar({ onLinkClick }: LeftSideBarProps) {
         </div>
       </Link>
 
-      <div className="w-[60%] h-1 rounded-md bg-gradient-to-t from-transparent  via-gray-400 to-transparent"></div>
-      <nav className="w-[80%] px-8">
+      <nav className="w-[100%] px-8 mt-4">
         <ul className="flex flex-col font-bold text-gray-900 space-y-5 text-xl">
           <li>
             <Link

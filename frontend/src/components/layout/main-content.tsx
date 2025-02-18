@@ -16,7 +16,7 @@ export default function MainContent({
       <div
         className={`w-full px-4 xl:px-0 ${!isHomePage && "max-w-2xl xl:max-w-3xl"}`}
       >
-        <div className={`mx-auto w-full ${!isHomePage && "max-w-2xl"}`}>
+        <div className={`pb-36 mx-auto w-full ${!isHomePage && "max-w-2xl"}`}>
           {children}
         </div>
       </div>

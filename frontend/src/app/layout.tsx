@@ -57,7 +57,7 @@ export default function RootLayout({
 
             <div className="flex h-screen pt-28">
               {/* Left Sidebar - only show on xl and up */}
-              <div className="hidden xl:block fixed left-24 top-28 bottom-16 w-72">
+              <div className="hidden lg:block fixed transition-all duration-300 left-0 xl:left-24 top-28 bottom-16 w-72">
                 <div className="h-full">
                   <LeftSideBar />
                 </div>
@@ -67,10 +67,8 @@ export default function RootLayout({
               <MainContent>{children}</MainContent>
 
               {/* Right Sidebar - only show on xl and up */}
-              <div className="hidden xl:block fixed right-24 top-28 bottom-16">
-                <div className="h-full">
-                  <Sidebar />
-                </div>
+              <div className="hidden lg:block fixed transition-all duration-300 right-0 xl:right-24 top-28 bottom-16">
+                <Sidebar />
               </div>
             </div>
 

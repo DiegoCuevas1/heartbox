@@ -263,6 +263,76 @@ def leave_family(request):
     return Response('Invalid request method.', status=405)
 
 
+@api_view(['POST', 'DELETE'])
+@authentication_classes([SessionAuthentication, BasicAuthentication])
+@permission_classes([IsAuthenticated])
+def like_post(request, post_id):
+    try:
+        post = Post.objects.get(id=post_id)
+        user = request.user
+
+        if request.method == 'POST':
+            # Like the post
+            if user not in post.likes.all():
+                post.likes.add(user)
+                # Create notification for post owner if the liker is not the post owner
+                if post.user != user:
+                    Notification.objects.create(
+                        notification_type='LIKE',
+                        sender=user,
+                        recipient=post.user,
+                        post_mentioned=post
+                    )
+                return Response({'message': 'Post liked successfully'}, status=status.HTTP_200_OK)
+            return Response({'message': 'Post already liked'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        elif request.method == 'DELETE':
+            # Unlike the post
+            if user in post.likes.all():
+                post.likes.remove(user)
+                # Optionally remove the like notification
+                if post.user != user:
+                    Notification.objects.filter(
+                        notification_type='LIKE',
+                        sender=user,
+                        recipient=post.user,
+                        post_mentioned=post
+                    ).delete()
+                return Response({'message': 'Post unliked successfully'}, status=status.HTTP_200_OK)
+            return Response({'message': 'Post not liked'}, status=status.HTTP_400_BAD_REQUEST)
+
+    except Post.DoesNotExist:
+        return Response({'error': 'Post not found'}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+def add_like_info_to_post(post, user):
+    """Helper function to add like information to post data"""
+    post_data = {
+        'id': post.id,
+        'title': post.title,
+        'user': post.user.id,
+        'message': post.message,
+        'datePosted': post.datePosted,
+        'likes_count': post.likes.count(),
+        'is_liked': user in post.likes.all(),
+        'user_details': {
+            'id': post.user.id,
+            'first_name': post.user.first_name,
+            'last_name': post.user.last_name,
+            'profile_picture': post.user.profile_picture,
+        },
+        'family_details': {
+            'id': post.family.id,
+            'family_name': post.family.family_name,
+            'family_description': post.family.family_description,
+        },
+        'media_type': post.media_type,
+        'media_url': post.media_url,
+        'categories': [{'id': cat.id, 'name': cat.name} for cat in post.categories.all()]
+    }
+    return post_data
+
 @api_view(['GET', 'POST'])
 @authentication_classes([SessionAuthentication, BasicAuthentication])
 @permission_classes([IsAuthenticated])
@@ -273,202 +343,51 @@ def post(request, category=None):
         family_id = request.GET.get('familyId')
 
         if category:
-            # Filter posts by category name
             try:
                 category_obj = Category.objects.get(name__iexact=category)
                 posts = Post.objects.filter(categories=category_obj).order_by('-datePosted')
-                serialized_posts = []
-                for post in posts:
-                    post_serialized = PostSerializer(post)
-                    family = Family.objects.get(id=post_serialized.data['family'])
-                    serialized_family = FamilySerializer(family, context={'request': request})
-                    user_details = {
-                        'id': post.user.id,
-                        'first_name': post.user.first_name,
-                        'last_name': post.user.last_name,
-                        'profile_picture': post.user.profile_picture,
-                    }
-                    family_details = {
-                        'id': serialized_family.data['id'],
-                        'family_name': serialized_family.data['family_name'],
-                        'family_description': serialized_family.data['family_description'],
-                    }
-                    post_data = {
-                        'id': post_serialized.data['id'],
-                        'title': post_serialized.data['title'],
-                        'user': post_serialized.data['user'],
-                        'message': post_serialized.data['message'],
-                        'datePosted': post_serialized.data['datePosted'],
-                        'family_details': family_details,
-                        'user_details': user_details,
-                        'media_type': post_serialized.data.get('media_type'),
-                        'media_url': post_serialized.data.get('media_url'),
-                        'categories': [{'id': cat.id, 'name': cat.name} for cat in post.categories.all()]
-                    }
-                    serialized_posts.append(post_data)
+                serialized_posts = [add_like_info_to_post(post, request.user) for post in posts]
                 return Response(serialized_posts, status=200)
             except Category.DoesNotExist:
                 return Response([], status=200)
 
         if post_id:
-            if Post.objects.filter(id=post_id).exists():
+            try:
                 post = Post.objects.get(id=post_id)
-                post_serialized = PostSerializer(post)
-                family = Family.objects.get(id=post_serialized.data['family'])
-                serialized_family = FamilySerializer(family,context={'request': request})
-                family_details = {
-                    'id':serialized_family.data['id'],
-                    'family_name':serialized_family.data['family_name'],
-                    'family_description':serialized_family.data['family_description'],
-                }
-                serializer_data = {
-                    'user_details':{
-                        'id':post.user.id,
-                        'first_name': post.user.first_name,
-                        'last_name': post.user.last_name,
-                        'profile_picture':post.user.profile_picture,
-                    },
-                    'id': post_serialized.data['id'],
-                    'title': post_serialized.data['title'],
-                    'user': post_serialized.data['user'],
-                    'message': post_serialized.data['message'],
-                    'datePosted': post_serialized.data['datePosted'],
-                    'family_details':family_details,
-                    'media_type': post_serialized.data.get('media_type'),
-                    'media_url': post_serialized.data.get('media_url'),
-                    'categories': [{'id': cat.id, 'name': cat.name} for cat in post.categories.all()]
-                }
-                return Response(serializer_data, status=200)
-            else:
-                return Response("Post does not exist", status=404)
+                post_data = add_like_info_to_post(post, request.user)
+                return Response(post_data, status=200)
+            except Post.DoesNotExist:
+                return Response("Post not found", status=404)
             
         if family_id:
             try:
                 family = Family.objects.get(id=family_id)
                 if request.user in family.members.all():
                     posts = Post.objects.get_posts_in_family(family).order_by('-datePosted')
-                    # Serialize posts along with user details
-                    serialized_posts = []
-                    for post in posts:
-                        post_serialized = PostSerializer(post)
-                        family = Family.objects.get(id=post_serialized.data['family'])
-                        serialized_family = FamilySerializer(family,context={'request': request})
-                        user_details = {
-                            'id': post.user.id,
-                            'first_name': post.user.first_name,
-                            'last_name': post.user.last_name,
-                            'profile_picture':post.user.profile_picture,
-                            # Add other user details as needed
-                        }
-                        family_details = {
-                            'id':serialized_family.data['id'],
-                            'family_name':serialized_family.data['family_name'],
-                            'family_description':serialized_family.data['family_description'],
-                        }
-                        post_data = {
-                            'id': post_serialized.data['id'],
-                            'title': post_serialized.data['title'],
-                            'user': post_serialized.data['user'],
-                            'message': post_serialized.data['message'],
-                            'datePosted': post_serialized.data['datePosted'],
-                            'family_details':family_details,
-                            'user_details': user_details,
-                            'media_type': post_serialized.data.get('media_type'),
-                            'media_url': post_serialized.data.get('media_url'),
-                            'categories': [{'id': cat.id, 'name': cat.name} for cat in post.categories.all()]
-                        }
-                        serialized_posts.append(post_data)
-
+                    serialized_posts = [add_like_info_to_post(post, request.user) for post in posts]
                     return Response(serialized_posts, status=200)
                 else:
                     return Response("User is not a member of this family", status=status.HTTP_403_FORBIDDEN)
             except Family.DoesNotExist:
                 return Response("Family not found", status=404)
+
         if user_id:
             try:
-                # Validate if the provided user_id is a valid UUID
                 UUID(user_id)
-            except ValueError:
-                raise ValidationError("Invalid userId format")
-
-            try:
-                # Fetch the user by UUID
                 user = UserProfile.objects.get(id=user_id)
                 posts = Post.objects.filter(user=user).order_by('-datePosted')
-                serialized_posts = []
-                for post in posts:
-                    post_serialized = PostSerializer(post)
-                    family = Family.objects.get(id=post_serialized.data['family'])
-                    serialized_family = FamilySerializer(family, context={'request': request})
-                    user_details = {
-                        'id': post.user.id,
-                        'first_name': post.user.first_name,
-                        'last_name': post.user.last_name,
-                        'profile_picture': post.user.profile_picture,
-                    }
-                    family_details = {
-                        'id': serialized_family.data['id'],
-                        'family_name': serialized_family.data['family_name'],
-                        'family_description': serialized_family.data['family_description'],
-                    }
-                    post_data = {
-                        'id': post_serialized.data['id'],
-                        'title': post_serialized.data['title'],
-                        'user': post_serialized.data['user'],
-                        'message': post_serialized.data['message'],
-                        'datePosted': post_serialized.data['datePosted'],
-                        'family_details': family_details,
-                        'user_details': user_details,
-                        'media_type': post_serialized.data.get('media_type'),
-                        'media_url': post_serialized.data.get('media_url'),
-                        'categories': [{'id': cat.id, 'name': cat.name} for cat in post.categories.all()]
-                    }
-                    serialized_posts.append(post_data)
-
+                serialized_posts = [add_like_info_to_post(post, request.user) for post in posts]
                 return Response(serialized_posts, status=200)
-
-            except UserProfile.DoesNotExist:
+            except (ValueError, UserProfile.DoesNotExist):
                 return Response("User not found", status=404)
-            
-        
+
+        # Get all posts from user's families
         user = UserProfile.objects.get(id=request.user.id)
         families = user.families.all()
         family_ids = [family.id for family in families]
-
         posts = Post.objects.filter(family__id__in=family_ids).order_by('-datePosted')
-        serialized_posts = []
-        for post in posts:
-            post_serialized = PostSerializer(post)
-            family = Family.objects.get(id=post_serialized.data['family'])
-            serialized_family = FamilySerializer(family,context={'request': request})
-            user_details = {
-                'id': post.user.id,
-                'first_name': post.user.first_name,
-                'last_name': post.user.last_name,
-                'profile_picture':post.user.profile_picture,
-                # Add other user details as needed
-            }
-            family_details = {
-                'id':serialized_family.data['id'],
-                'family_name':serialized_family.data['family_name'],
-                'family_description':serialized_family.data['family_description'],
-            }
-            post_data = {
-                'id': post_serialized.data['id'],
-                'title': post_serialized.data['title'],
-                'user': post_serialized.data['user'],
-                'message': post_serialized.data['message'],
-                'datePosted': post_serialized.data['datePosted'],
-                'family_details':family_details,
-                'user_details': user_details,
-                'media_type': post_serialized.data.get('media_type'),
-                'media_url': post_serialized.data.get('media_url'),
-                'categories': [{'id': cat.id, 'name': cat.name} for cat in post.categories.all()]
-            }
-            serialized_posts.append(post_data)
-
-        return Response(serialized_posts,200)
-
+        serialized_posts = [add_like_info_to_post(post, request.user) for post in posts]
+        return Response(serialized_posts, status=200)
 
     if request.method == 'POST':
         try:

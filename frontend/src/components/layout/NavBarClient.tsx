@@ -78,6 +78,8 @@ const NavBarClient = () => {
         return `${notification.sender_details.first_name} accepted your connection request`;
       case "COMMENT":
         return `${notification.sender_details.first_name} commented: ${notification.comment_message}`;
+      case "LIKE":
+        return `${notification.sender_details.first_name} liked your post`;
       default:
         return "New notification";
     }
@@ -160,7 +162,11 @@ const NavBarClient = () => {
           <div className="flex items-center space-x-4">
             <Link
               href="/auth/sign-in"
-              className="text-lg text-gray-600 hover:text-gray-900"
+              className={`text-lg ${
+                pathname === "/auth/sign-in"
+                  ? "text-blue-600 font-semibold"
+                  : "text-gray-600 hover:text-gray-900"
+              }`}
             >
               Login
             </Link>
@@ -250,9 +256,10 @@ const NavBarClient = () => {
                         <div
                           key={notification.id}
                           className="p-3 border-b border-gray-100 hover:bg-gray-50 transition-colors bg-blue-50"
-                          onClick={() =>
-                            markNotificationAsRead(notification.id)
-                          }
+                          onClick={() => {
+                            markNotificationAsRead(notification.id);
+                            setShowNotifications(false);
+                          }}
                         >
                           <Link
                             href={

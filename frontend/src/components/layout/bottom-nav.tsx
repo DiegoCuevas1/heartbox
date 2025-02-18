@@ -55,7 +55,8 @@ const BottomNavBar = () => {
               width={50}
               height={50}
               alt="Heartbox Home Page Logo"
-              style={{ width: "auto", height: "auto" }}
+              className="rounded-full w-[50px] h-[50px] object-cover"
+              style={{ width: "50px", height: "50px" }}
             />
           )}
         </Link>

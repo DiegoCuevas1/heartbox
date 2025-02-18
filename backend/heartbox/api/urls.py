@@ -17,6 +17,7 @@ urlpatterns = [
     path('user/posts/category/<str:category>/', views.post, name='posts_by_category'),
     path("user/posts/<int:postId>/", views.post, name="post"),
     path('user/posts/<str:userId>/',views.post,name="user_posts"),
+    path('user/posts/<int:post_id>/like', views.like_post, name='like_post'),
     path('user/notifications',views.notification,name='notifications'),
     path("user/notifications/<int:notificationId>/", views.notification, name="notification_detail"),
     path('user/notification/count', views.notification_count, name='notification_count'),

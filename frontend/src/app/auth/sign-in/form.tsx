@@ -5,10 +5,15 @@ import { sanitize_res_msg } from "@/utils/utilFunctions";
 import { useRouter } from "next/navigation";
 import { useUserContext } from "@/context/AuthContext";
 import LoadingOverlay from "@/components/LoadingOverlay";
+import { FaGoogle, FaFacebook, FaGithub } from "react-icons/fa";
 
 function FormComponent() {
   const [isLoading, setIsLoading] = useState(false);
   const [showLoadingOverlay, setShowLoadingOverlay] = useState(false);
+
+  const handleSocialLogin = (provider: string) => {
+    window.location.href = `http://localhost:8000/accounts/${provider}/login/`;
+  };
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -53,6 +58,45 @@ function FormComponent() {
         <h2 className="pb-6 flex font-loves font-bold text-3xl justify-center items-center text-center">
           <span className="border-b-2 border-[#D31c60]">Sign In</span>
         </h2>
+
+        {/* Social Login Buttons */}
+        <div className="flex flex-col gap-4 mb-8">
+          <button
+            onClick={() => handleSocialLogin("google")}
+            className="flex items-center justify-center gap-2 w-full py-2 px-4 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+          >
+            <FaGoogle className="text-[#DB4437]" />
+            <span>Continue with Google</span>
+          </button>
+
+          <button
+            onClick={() => handleSocialLogin("facebook")}
+            className="flex items-center justify-center gap-2 w-full py-2 px-4 bg-[#4267B2] text-white border border-[#4267B2] rounded-lg hover:bg-[#365899] transition-colors"
+          >
+            <FaFacebook />
+            <span>Continue with Facebook</span>
+          </button>
+
+          <button
+            onClick={() => handleSocialLogin("github")}
+            className="flex items-center justify-center gap-2 w-full py-2 px-4 bg-[#24292e] text-white border border-[#24292e] rounded-lg hover:bg-[#1b1f23] transition-colors"
+          >
+            <FaGithub />
+            <span>Continue with GitHub</span>
+          </button>
+        </div>
+
+        <div className="relative mb-8">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-gray-300"></div>
+          </div>
+          <div className="relative flex justify-center text-sm">
+            <span className="px-2 bg-[#eecfe0] text-gray-500">
+              Or sign in with email
+            </span>
+          </div>
+        </div>
+
         <form
           className="flex flex-col items-center justify-center mx-auto max-w-md"
           onSubmit={handleSubmit}
