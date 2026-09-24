@@ -1,5 +1,7 @@
 "use client";
-import { useState, useEffect } from "react";
+import { cldImage } from "@/utils/media";
+import { apiFetch } from "@/utils/api";
+import { use, useState, useEffect } from "react";
 import { useUserContext } from "@/context/AuthContext";
 import ProfileTimeline from "./profileTimeline";
 import { User } from "@/app/types";
@@ -11,13 +13,9 @@ import RemoveConnectionModal from "@/components/modals/RemoveConnectionModal";
 
 async function getData(userId: string) {
   try {
-    const res = await fetch(
-      `http://localhost:8000/api/user/users?userId=${userId}`,
-      {
-        method: "GET",
-        credentials: "include",
-      }
-    );
+    const res = await apiFetch(`/api/user/users?userId=${userId}`, {
+      method: "GET",
+    });
 
     if (!res.ok) {
       // Handle error cases
@@ -32,7 +30,8 @@ async function getData(userId: string) {
   }
 }
 
-export default function Profile({ params }: { params: { id: string } }) {
+export default function Profile(props: { params: Promise<{ id: string }> }) {
+  const params = use(props.params);
   const router = useRouter();
   const [user, setUser] = useState<User | null>();
   const [connectionStatus, setConnectionStatus] = useState<string>("none");
@@ -70,13 +69,12 @@ export default function Profile({ params }: { params: { id: string } }) {
 
   const sendConnectionRequest = async () => {
     try {
-      const res = await fetch(`http://localhost:8000/api/connections/request`, {
+      const res = await apiFetch(`/api/connections/request`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ userId: params.id }), // Send the user ID in the request body
-        credentials: "include",
       });
 
       if (!res.ok) {
@@ -92,13 +90,12 @@ export default function Profile({ params }: { params: { id: string } }) {
 
   const cancelConnectionRequest = async () => {
     try {
-      const res = await fetch(`http://localhost:8000/api/connections/cancel`, {
+      const res = await apiFetch(`/api/connections/cancel`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ userId: params.id }), // Send the user ID in the request body
-        credentials: "include",
       });
 
       if (!res.ok) {
@@ -114,7 +111,7 @@ export default function Profile({ params }: { params: { id: string } }) {
 
   const acceptConnectionRequest = async () => {
     try {
-      const res = await fetch(`http://localhost:8000/api/connections/respond`, {
+      const res = await apiFetch(`/api/connections/respond`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -123,7 +120,6 @@ export default function Profile({ params }: { params: { id: string } }) {
           connectionId: user?.connectionId,
           action: "accept",
         }),
-        credentials: "include",
       });
 
       if (!res.ok) {
@@ -139,7 +135,7 @@ export default function Profile({ params }: { params: { id: string } }) {
 
   const declineConnectionRequest = async () => {
     try {
-      const res = await fetch(`http://localhost:8000/api/connections/respond`, {
+      const res = await apiFetch(`/api/connections/respond`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -148,7 +144,6 @@ export default function Profile({ params }: { params: { id: string } }) {
           connectionId: user?.connectionId,
           action: "decline",
         }),
-        credentials: "include",
       });
 
       if (!res.ok) {
@@ -164,13 +159,12 @@ export default function Profile({ params }: { params: { id: string } }) {
 
   const removeConnection = async () => {
     try {
-      const res = await fetch(`http://localhost:8000/api/connections/remove`, {
+      const res = await apiFetch(`/api/connections/remove`, {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ userId: params.id }),
-        credentials: "include",
       });
 
       if (!res.ok) {
@@ -213,7 +207,8 @@ export default function Profile({ params }: { params: { id: string } }) {
       <div className="flex justify-center space-x-24">
         <div className="flex flex-col items-center">
           <Image
-            src={`https://res.cloudinary.com/dcyk5quni/${user?.profile_picture}`}
+            unoptimized
+            src={cldImage(user?.profile_picture, 200)}
             width={100}
             height={100}
             alt="Profile Picture"

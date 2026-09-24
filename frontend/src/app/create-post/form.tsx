@@ -1,4 +1,10 @@
 "use client";
+import { apiFetch } from "@/utils/api";
+import { RELIC_CATEGORIES } from "@/utils/categories";
+import { compressImage } from "@/utils/compressImage";
+
+const MAX_IMAGE_MB = 10;
+const MAX_VIDEO_MB = 50;
 
 import { FormEvent, useContext, useEffect, useState } from "react";
 import { Family } from "../types";
@@ -11,9 +17,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 
 async function getData() {
   try {
-    const res = await fetch(`http://localhost:8000/api/user/families`, {
+    const res = await apiFetch(`/api/user/families`, {
       method: "GET",
-      credentials: "include",
     });
 
     if (!res.ok) {
@@ -40,24 +45,30 @@ export default function FormComponent() {
   const [mediaType, setMediaType] = useState<"IMAGE" | "VIDEO" | null>(null);
   const [mediaFile, setMediaFile] = useState<File | null>(null);
 
-  const handleMediaChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-    // Check file size (10MB limit)
-    if (file.size > 10 * 1024 * 1024) {
-      toast.error("File size must be less than 10MB");
-      return;
-    }
+  const handleMediaChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const original = e.target.files?.[0];
+    if (!original) return;
 
-    // Determine media type
-    const type = file.type.startsWith("image/")
+    const type = original.type.startsWith("image/")
       ? "IMAGE"
-      : file.type.startsWith("video/")
+      : original.type.startsWith("video/")
         ? "VIDEO"
         : null;
     if (!type) {
       toast.error("Invalid file type. Please upload an image or video.");
+      return;
+    }
+
+    const file = type === "IMAGE" ? await compressImage(original) : original;
+    const limitMb = type === "IMAGE" ? MAX_IMAGE_MB : MAX_VIDEO_MB;
+    if (file.size > limitMb * 1024 * 1024) {
+      toast.error(
+        type === "IMAGE"
+          ? `Photos must be under ${MAX_IMAGE_MB}MB`
+          : `Videos must be under ${MAX_VIDEO_MB}MB (about a minute of video)`,
+      );
       return;
     }
 
@@ -73,7 +84,7 @@ export default function FormComponent() {
     e.preventDefault();
 
     if (selectedFamily?.id === -1) {
-      toast.error("Select a Family!");
+      toast.error("Pick a HeartBox for this relic!");
       return;
     }
 
@@ -82,15 +93,15 @@ export default function FormComponent() {
     formData.append(
       "title",
       (e.currentTarget.querySelector('[name="title"]') as HTMLInputElement)
-        ?.value || ""
+        ?.value || "",
     );
     formData.append(
       "description",
       (
         e.currentTarget.querySelector(
-          '[name="description"]'
+          '[name="description"]',
         ) as HTMLTextAreaElement
-      )?.value || ""
+      )?.value || "",
     );
     formData.append("category", category);
 
@@ -99,17 +110,25 @@ export default function FormComponent() {
       formData.append("media_type", mediaType);
     }
 
-    const res = await fetch("http://localhost:8000/api/user/posts", {
-      method: "POST",
-      body: formData,
-      credentials: "include",
-    });
+    setIsSubmitting(true);
+    try {
+      const res = await apiFetch("/api/user/posts", {
+        method: "POST",
+        body: formData,
+      });
 
-    const res_msg = await res.text();
-    if (res.ok) {
-      toast.success(sanitize_res_msg(res_msg));
-      router.push(`/families/${selectedFamily?.id}`);
-    } else toast.error(res_msg);
+      const res_msg = await res.text();
+      if (res.ok) {
+        toast.success(sanitize_res_msg(res_msg));
+        router.push(`/families/${selectedFamily?.id}`);
+      } else toast.error(sanitize_res_msg(res_msg));
+    } catch {
+      toast.error(
+        "Could not reach HeartBox. Check your connection and try again.",
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   };
   const [familyModal, setFamilyModal] = useState(false);
   const [selectedFamily, setSelectedFamily] = useState<Family | null>({
@@ -133,7 +152,7 @@ export default function FormComponent() {
         const familyId = searchParams.get("familyId");
         if (familyId) {
           const family = fetchedData.find(
-            (f: { id: number }) => f.id === parseInt(familyId)
+            (f: { id: number }) => f.id === parseInt(familyId),
           );
           if (family) {
             setSelectedFamily(family); // Set the selected family based on the URL param
@@ -160,7 +179,7 @@ export default function FormComponent() {
             className="border-[#d31c60]  font-bold italic rounded-md px-2 border-2"
             type="text"
             name="title"
-            placeholder="Enter Post Title..."
+            placeholder="Name this relic..."
           />
         </div>
         <div className="flex space-y-2 flex-col">
@@ -171,7 +190,7 @@ export default function FormComponent() {
             className="border-[#d31c60] font-bold italic rounded-md px-2 border-2"
             rows={5}
             name="description"
-            placeholder="Enter Post Description..."
+            placeholder="Tell the story behind it..."
           />
         </div>
         <div className="flex space-y-2 flex-col">
@@ -185,12 +204,11 @@ export default function FormComponent() {
             onChange={(e) => setCategory(e.target.value)}
           >
             <option value="">Select Category</option>
-            <option value="Wedding">Wedding</option>
-            <option value="Christmas">Christmas</option>
-            <option value="Birthday">Birthday</option>
-            <option value="Anniversary">Anniversary</option>
-            <option value="Other">Other</option>
-            <option value="None">None</option>
+            {RELIC_CATEGORIES.map((name) => (
+              <option key={name} value={name}>
+                {name}
+              </option>
+            ))}
           </select>
         </div>
         <div className="flex space-y-2 flex-col">
@@ -260,10 +278,11 @@ export default function FormComponent() {
 
           <div className="items-center justify-center">
             <button
-              className="bg-[#d31c60] mt-4 rounded-lg p-2 font-loves font-bold text-2xl text-white"
+              className="bg-[#d31c60] mt-4 rounded-lg p-2 font-loves font-bold text-2xl text-white disabled:opacity-60"
               type="submit"
+              disabled={isSubmitting}
             >
-              Submit
+              {isSubmitting ? "Uploading..." : "Submit"}
             </button>
           </div>
         </div>

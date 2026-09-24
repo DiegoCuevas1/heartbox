@@ -1,4 +1,6 @@
 "use client";
+import { cldImage } from "@/utils/media";
+import { apiFetch } from "@/utils/api";
 import Image from "next/image";
 import { NotificationType } from "../types/notification";
 import Link from "next/link";
@@ -26,21 +28,17 @@ export default function Notification({
   const handleConnectionResponse = async (action: "accept" | "decline") => {
     setIsLoading(true);
     try {
-      const response = await fetch(
-        "http://localhost:8000/api/connections/respond",
-        {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          credentials: "include",
-          body: JSON.stringify({
-            connectionId: notification.connection_id,
-            action: action,
-            notificationId: notification.id,
-          }),
-        }
-      );
+      const response = await apiFetch("/api/connections/respond", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          connectionId: notification.connection_id,
+          action: action,
+          notificationId: notification.id,
+        }),
+      });
 
       if (!response.ok) {
         throw new Error("Failed to respond to connection request");
@@ -59,7 +57,8 @@ export default function Notification({
       <div className="flex text-lg items-center space-x-2">
         <Link href={`/profile/${notification.sender_details.id}`}>
           <Image
-            src={`https://res.cloudinary.com/dcyk5quni/${notification.sender_details.profile_picture}`}
+            unoptimized
+            src={cldImage(notification.sender_details.profile_picture, 100)}
             alt={""}
             width={50}
             height={100}

@@ -1,21 +1,22 @@
-# Use the official Python image as a parent image
-FROM python:3.12.1
+FROM python:3.12-slim
 
-# Set environment variables
-ENV PYTHONDONTWRITEBYTECODE 1
-ENV PYTHONUNBUFFERED 1
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1
 
-# Set the working directory in the container
-WORKDIR /backend/heartbox
+WORKDIR /app
 
-# Copy the dependencies file to the working directory
 COPY requirements.txt .
-
-# Install any needed dependencies specified in requirements.txt
 RUN pip install -r requirements.txt
 
-# Copy the project files into the container
 COPY . .
 
-# Run Django migrations when the container starts
-CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+# Static files for the Django admin (served by WhiteNoise).
+RUN DJANGO_ENV=build SECRET_KEY=build python manage.py collectstatic --noinput
+
+RUN useradd --create-home heartbox && chown -R heartbox /app
+USER heartbox
+
+EXPOSE 8000
+ENTRYPOINT ["./entrypoint.sh"]
+CMD ["gunicorn", "website.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "3", "--timeout", "120", "--access-logfile", "-"]

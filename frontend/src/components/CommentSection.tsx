@@ -1,4 +1,6 @@
 "use client";
+import { cldImage } from "@/utils/media";
+import { apiFetch } from "@/utils/api";
 
 import { Comment } from "@/app/types/comment";
 import Image from "next/image";
@@ -20,12 +22,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({ postId }) => {
 
   const fetchComments = useCallback(async () => {
     try {
-      const response = await fetch(
-        `http://localhost:8000/api/user/comments?postId=${postId}`,
-        {
-          credentials: "include",
-        }
-      );
+      const response = await apiFetch(`/api/user/comments?postId=${postId}`);
       if (!response.ok) {
         throw new Error("Failed to fetch comments");
       }
@@ -46,9 +43,8 @@ const CommentSection: React.FC<CommentSectionProps> = ({ postId }) => {
     if (!replyText.trim()) return;
 
     try {
-      const response = await fetch("http://localhost:8000/api/user/comments", {
+      const response = await apiFetch("/api/user/comments", {
         method: "POST",
-        credentials: "include",
         headers: {
           "Content-Type": "application/json",
         },
@@ -98,9 +94,8 @@ const CommentSection: React.FC<CommentSectionProps> = ({ postId }) => {
     if (!newComment.trim()) return;
 
     try {
-      const response = await fetch("http://localhost:8000/api/user/comments", {
+      const response = await apiFetch("/api/user/comments", {
         method: "POST",
-        credentials: "include",
         headers: {
           "Content-Type": "application/json",
         },
@@ -126,7 +121,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({ postId }) => {
     comment: Comment,
     level: number = 0,
     index: number = 0,
-    comments: Comment[]
+    comments: Comment[],
   ) => {
     const isReplyOpen = replyingTo === comment.id;
     const shouldIndent = level === 1;
@@ -157,7 +152,8 @@ const CommentSection: React.FC<CommentSectionProps> = ({ postId }) => {
           <div className="bg-white rounded-lg p-4 ">
             <div className="flex items-center mb-2">
               <Image
-                src={`https://res.cloudinary.com/dcyk5quni/${comment.user_details.profile_picture}`}
+                unoptimized
+                src={cldImage(comment.user_details.profile_picture, 64)}
                 alt={`${comment.user_details.first_name}'s profile`}
                 className="w-8 h-8 rounded-full mr-2"
                 width={32}
@@ -233,8 +229,8 @@ const CommentSection: React.FC<CommentSectionProps> = ({ postId }) => {
                   reply,
                   level + 1,
                   replyIndex,
-                  comment.replies || []
-                )
+                  comment.replies || [],
+                ),
               )}
             </div>
           )}
@@ -282,7 +278,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({ postId }) => {
         </div>
       </div>
       {comments.map((comment, index) =>
-        renderComment(comment, 0, index, comments)
+        renderComment(comment, 0, index, comments),
       )}
     </div>
   );

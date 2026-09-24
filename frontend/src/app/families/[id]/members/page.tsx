@@ -1,5 +1,6 @@
 "use client";
-import { useState, useEffect } from "react";
+import { apiFetch } from "@/utils/api";
+import { use, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { User } from "@/app/types/user";
 
@@ -7,12 +8,11 @@ import Link from "next/link";
 import Image from "next/image";
 async function getData(familyId: string) {
   try {
-    const res = await fetch(
-      `http://localhost:8000/api/user/families/members?familyId=${familyId}`,
+    const res = await apiFetch(
+      `/api/user/families/members?familyId=${familyId}`,
       {
         method: "GET",
-        credentials: "include",
-      }
+      },
     );
 
     if (!res.ok) {
@@ -27,7 +27,8 @@ async function getData(familyId: string) {
     return error; // Rethrow the error to be caught by the calling code
   }
 }
-export default function Members({ params }: { params: { id: string } }) {
+export default function Members(props: { params: Promise<{ id: string }> }) {
+  const params = use(props.params);
   const [data, setData] = useState<User[]>();
   const router = useRouter();
 

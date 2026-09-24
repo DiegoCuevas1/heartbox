@@ -1,23 +1,30 @@
-# Use Node.js as base image
-FROM node:latest
-
-# Set working directory
+# syntax=docker/dockerfile:1
+FROM node:22-alpine AS deps
 WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci --no-audit --no-fund
 
-# Copy package.json and package-lock.json to the working directory
-COPY package*.json ./
-
-# Install dependencies
-RUN npm install
-
-# Copy the rest of the application code to the working directory
+FROM node:22-alpine AS build
+WORKDIR /app
+ENV NEXT_TELEMETRY_DISABLED=1
+# Where the Next.js server forwards /api, /accounts and /admin (baked into the build).
+ARG BACKEND_URL=http://backend:8000
+ARG NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME
+ENV BACKEND_URL=$BACKEND_URL \
+    NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME=$NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME
+COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-
-# Build the Next.js app for production
 RUN npm run build
 
-# Expose the port Next.js will run on
+FROM node:22-alpine AS runner
+WORKDIR /app
+ENV NODE_ENV=production \
+    NEXT_TELEMETRY_DISABLED=1 \
+    PORT=3000 \
+    HOSTNAME=0.0.0.0
+COPY --from=build --chown=node:node /app/.next/standalone ./
+COPY --from=build --chown=node:node /app/.next/static ./.next/static
+COPY --from=build --chown=node:node /app/public ./public
+USER node
 EXPOSE 3000
-
-# Command to run the Next.js app in production
-CMD ["npm", "start"]
+CMD ["node", "server.js"]

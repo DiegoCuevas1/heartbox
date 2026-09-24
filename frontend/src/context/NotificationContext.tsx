@@ -1,7 +1,10 @@
 "use client";
+import { apiFetch } from "@/utils/api";
 
 import { createContext, useContext, useEffect, useState } from "react";
 import { useUserContext } from "./AuthContext";
+
+const POLL_INTERVAL_MS = 60_000;
 
 interface NotificationContextType {
   unreadCount: number;
@@ -11,7 +14,7 @@ interface NotificationContextType {
 }
 
 const NotificationContext = createContext<NotificationContextType | undefined>(
-  undefined
+  undefined,
 );
 
 export function NotificationProvider({
@@ -33,12 +36,7 @@ export function NotificationProvider({
   useEffect(() => {
     const fetchUnreadCount = async () => {
       try {
-        const response = await fetch(
-          "http://localhost:8000/api/user/notification/count",
-          {
-            credentials: "include",
-          }
-        );
+        const response = await apiFetch("/api/user/notification/count");
         if (response.ok) {
           const data = await response.json();
           setUnreadCount(data.count);
@@ -48,11 +46,30 @@ export function NotificationProvider({
       }
     };
 
-    if (isAuthenticated) {
+    if (!isAuthenticated) return;
+
+    // Poll only while the tab is visible; refresh as soon as it comes back.
+    // Background tabs polling every few seconds are the biggest source of
+    // API requests for an app like this.
+    let interval: ReturnType<typeof setInterval> | undefined;
+    const start = () => {
+      if (interval) return;
       fetchUnreadCount();
-      const interval = setInterval(fetchUnreadCount, 30000);
-      return () => clearInterval(interval);
-    }
+      interval = setInterval(fetchUnreadCount, POLL_INTERVAL_MS);
+    };
+    const stop = () => {
+      clearInterval(interval);
+      interval = undefined;
+    };
+    const onVisibilityChange = () =>
+      document.visibilityState === "visible" ? start() : stop();
+
+    if (document.visibilityState === "visible") start();
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    return () => {
+      stop();
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+    };
   }, [isAuthenticated]);
 
   return (
@@ -73,7 +90,7 @@ export function useNotifications() {
   const context = useContext(NotificationContext);
   if (context === undefined) {
     throw new Error(
-      "useNotifications must be used within a NotificationProvider"
+      "useNotifications must be used within a NotificationProvider",
     );
   }
   return context;

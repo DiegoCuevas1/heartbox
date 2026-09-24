@@ -15,8 +15,9 @@ import { NotificationProvider } from "@/context/NotificationContext";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "HeartBox App",
-  description: "created by Diego Cuevas, Rob Mantovani, Kyle Mantovani",
+  title: "HeartBox",
+  description:
+    "A private place for your family to keep and share its memories, traditions and recipes.",
 };
 
 export default function RootLayout({

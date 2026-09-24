@@ -1,4 +1,5 @@
 "use client";
+import { cldImage } from "@/utils/media";
 import { useUserContext } from "@/context/AuthContext";
 import { useNotifications } from "@/context/NotificationContext";
 import Link from "next/link";
@@ -65,7 +66,8 @@ export default function LeftSideBar({ onLinkClick }: LeftSideBarProps) {
         className="flex items-center group hover:text-blue-500 space-x-2  "
       >
         <Image
-          src={`https://res.cloudinary.com/dcyk5quni/${user?.profile_picture}`}
+          unoptimized
+          src={cldImage(user?.profile_picture, 200)}
           alt={"Profile Picture"}
           width={100}
           height={100}
@@ -155,7 +157,7 @@ export default function LeftSideBar({ onLinkClick }: LeftSideBarProps) {
                   d="M12 4.5v15m7.5-7.5h-15"
                 />
               </svg>
-              <span>Create Post</span>
+              <span>Add a Relic</span>
             </Link>
           </li>
           <li className="relative">

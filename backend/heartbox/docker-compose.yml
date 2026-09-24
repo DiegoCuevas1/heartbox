@@ -1,21 +1,34 @@
+# Local development: Postgres + Django dev server with live reload.
+# For a full production-like stack, use ../../docker-compose.yml at the repo root.
 services:
   web:
     build: .
+    command: python manage.py runserver 0.0.0.0:8000
     volumes:
-      - .:/backend/heartbox
+      - .:/app
     ports:
       - "8000:8000"
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      DATABASE_URL: postgres://postgres:postgres@db:5432/heartbox
     depends_on:
-      - my-postgres
-    restart: always
+      db:
+        condition: service_healthy
+  db:
+    image: postgres:16-alpine
     environment:
-      DJANGO_WATCHMAN_TIMEOUT: 20
-  my-postgres:
-    image: postgres
-    environment:
-      POSTGRES_PASSWORD: mypassword
+      POSTGRES_DB: heartbox
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
     volumes:
-      - my_postgres_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      retries: 10
 
 volumes:
-  my_postgres_data:
+  postgres_data:

@@ -1,4 +1,5 @@
 "use client";
+import { apiFetch } from "@/utils/api";
 import { useEffect, useState } from "react";
 import Card from "./card";
 import toast from "react-hot-toast";
@@ -8,9 +9,8 @@ import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
 
 async function getData() {
   try {
-    const res = await fetch("http://localhost:8000/api/user/families", {
+    const res = await apiFetch("/api/user/families", {
       method: "GET",
-      credentials: "include",
     });
 
     if (res.status === 403) {

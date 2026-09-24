@@ -1,18 +1,27 @@
 "use client";
-import { Post } from "@/app/types/post";
+import { use } from "react";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { usePostFeed } from "@/hooks/usePostFeed";
+import LoadMore from "@/components/LoadMore";
+import { toTitleCase } from "@/utils/utilFunctions";
 import { motion } from "framer-motion";
 import TimelineCard from "@/app/timeline/timelineCard";
 
-export default function CategoryPage({
-  params,
-}: {
-  params: { category: string };
+export default function CategoryPage(props: {
+  params: Promise<{ category: string }>;
 }) {
-  const [posts, setPosts] = useState<Post[]>([]);
-  const [loading, setLoading] = useState(true);
-  const categoryName = params.category.replace("-relics", "").toLowerCase();
+  const params = use(props.params);
+  const slug = decodeURIComponent(params.category)
+    .replace(/-relics$/, "")
+    .toLowerCase();
+  const categoryName = slug.replace(/-/g, " ");
+  const {
+    posts,
+    isLoading: loading,
+    isLoadingMore,
+    hasMore,
+    loadMore,
+  } = usePostFeed(`/api/user/posts/category/${encodeURIComponent(slug)}/`);
 
   const container = {
     hidden: { opacity: 0 },
@@ -31,36 +40,12 @@ export default function CategoryPage({
       opacity: 1,
       y: 0,
       transition: {
-        type: "spring",
+        type: "spring" as const,
         duration: 0.8,
         bounce: 0.2,
       },
     },
   };
-
-  useEffect(() => {
-    const fetchPosts = async () => {
-      try {
-        const response = await fetch(
-          `http://localhost:8000/api/user/posts/category/${categoryName.toLowerCase()}/`,
-          {
-            credentials: "include",
-          }
-        );
-        if (!response.ok) {
-          throw new Error("Failed to fetch posts");
-        }
-        const data = await response.json();
-        setPosts(data);
-      } catch (error) {
-        console.error("Error fetching posts:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchPosts();
-  }, [categoryName]);
 
   if (loading) {
     return (
@@ -78,7 +63,7 @@ export default function CategoryPage({
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.7, ease: "easeOut" }}
       >
-        {categoryName.charAt(0).toUpperCase() + categoryName.slice(1)} Relics
+        {toTitleCase(categoryName)} Relics
       </motion.h1>
       <motion.div
         className="flex-col flex gap-4"
@@ -87,13 +72,20 @@ export default function CategoryPage({
         animate="show"
       >
         {posts.length > 0 ? (
-          posts.map((post) => (
-            <motion.div key={post.id} variants={item}>
-              <Link href={`/posts/${post.id}`}>
-                <TimelineCard post={post} />
-              </Link>
-            </motion.div>
-          ))
+          <>
+            {posts.map((post) => (
+              <motion.div key={post.id} variants={item}>
+                <Link href={`/posts/${post.id}`}>
+                  <TimelineCard post={post} />
+                </Link>
+              </motion.div>
+            ))}
+            <LoadMore
+              hasMore={hasMore}
+              isLoading={isLoadingMore}
+              onLoadMore={loadMore}
+            />
+          </>
         ) : (
           <motion.p
             className="text-center text-gray-600"
@@ -101,7 +93,7 @@ export default function CategoryPage({
             animate={{ opacity: 1 }}
             transition={{ duration: 0.7 }}
           >
-            No posts found in this category
+            No relics in this category yet
           </motion.p>
         )}
       </motion.div>

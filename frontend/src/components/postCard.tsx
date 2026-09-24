@@ -1,4 +1,6 @@
 "use client";
+import { cldImage, cldVideo } from "@/utils/media";
+import { apiFetch } from "@/utils/api";
 import { Post } from "@/app/types/post";
 import Image from "next/image";
 import Link from "next/link";
@@ -22,13 +24,9 @@ export default function PostCard({ post }: { post: Post }) {
   const handleLike = async (e: React.MouseEvent) => {
     e.preventDefault(); // Prevent navigation when clicking the like button
     try {
-      const response = await fetch(
-        `http://localhost:8000/api/user/posts/${post.id}/like`,
-        {
-          method: isLiked ? "DELETE" : "POST",
-          credentials: "include",
-        }
-      );
+      const response = await apiFetch(`/api/user/posts/${post.id}/like`, {
+        method: isLiked ? "DELETE" : "POST",
+      });
 
       if (!response.ok) {
         throw new Error("Failed to update like status");
@@ -49,7 +47,8 @@ export default function PostCard({ post }: { post: Post }) {
       <div className="flex items-center space-x-2">
         <Link href={`/profile/${post.user}`}>
           <Image
-            src={`https://res.cloudinary.com/dcyk5quni/${post.user_details.profile_picture}`}
+            unoptimized
+            src={cldImage(post.user_details.profile_picture, 100)}
             width={50}
             height={50}
             alt={`${post.user_details.first_name} ${post.user_details.last_name}'s profile picture`}
@@ -89,7 +88,8 @@ export default function PostCard({ post }: { post: Post }) {
         <div className="bg-white rounded-lg p-2 mx-auto">
           {post.media_type === "IMAGE" ? (
             <Image
-              src={`https://res.cloudinary.com/dcyk5quni/${post.media_url}`}
+              unoptimized
+              src={cldImage(post.media_url, 800)}
               alt="Post image"
               width={400}
               height={400}
@@ -98,7 +98,7 @@ export default function PostCard({ post }: { post: Post }) {
           ) : (
             post.media_type === "VIDEO" && (
               <video
-                src={`https://res.cloudinary.com/dcyk5quni/video/upload/${post.media_url}`}
+                src={cldVideo(post.media_url)}
                 controls
                 className="rounded-lg max-h-[400px] w-auto"
               />

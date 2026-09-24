@@ -1,4 +1,5 @@
 "use client";
+import { cldImage } from "@/utils/media";
 import { useUserContext } from "@/context/AuthContext";
 import Image from "next/image";
 import Link from "next/link";
@@ -51,7 +52,8 @@ const BottomNavBar = () => {
         <Link href={`/profile/${user?.id}`}>
           {user?.profile_picture && (
             <Image
-              src={`https://res.cloudinary.com/dcyk5quni/${user?.profile_picture}`}
+              unoptimized
+              src={cldImage(user?.profile_picture, 100)}
               width={50}
               height={50}
               alt="Heartbox Home Page Logo"

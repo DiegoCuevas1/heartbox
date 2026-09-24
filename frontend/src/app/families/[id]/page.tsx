@@ -1,20 +1,19 @@
 "use client";
-import { useState, useEffect } from "react";
+import { cldImage } from "@/utils/media";
+import { apiFetch } from "@/utils/api";
+import { use, useState, useEffect } from "react";
 import MemberList from "./MemberView";
 import Image from "next/image";
+import Link from "next/link";
 import FamilyTimeline from "./FamilyTimeline";
 import { useRouter } from "next/navigation";
 import { Family } from "@/app/types";
 
 async function getData(familyId: string) {
   try {
-    const res = await fetch(
-      `http://localhost:8000/api/user/families?familyId=${familyId}`,
-      {
-        method: "GET",
-        credentials: "include",
-      }
-    );
+    const res = await apiFetch(`/api/user/families?familyId=${familyId}`, {
+      method: "GET",
+    });
 
     if (!res.ok) {
       // Handle error cases
@@ -28,7 +27,8 @@ async function getData(familyId: string) {
     return error; // Rethrow the error to be caught by the calling code
   }
 }
-export default function Page({ params }: { params: { id: string } }) {
+export default function Page(props: { params: Promise<{ id: string }> }) {
+  const params = use(props.params);
   const [data, setData] = useState<Family>();
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const router = useRouter();
@@ -37,7 +37,10 @@ export default function Page({ params }: { params: { id: string } }) {
     async function fetchData() {
       try {
         const fetchedData = await getData(params.id);
-        // Process data or set it to state as needed
+        if (!Array.isArray(fetchedData) || fetchedData.length === 0) {
+          router.push("/families");
+          return;
+        }
         setData(fetchedData[0]);
         setIsLoading(false);
       } catch (error: any) {
@@ -56,52 +59,23 @@ export default function Page({ params }: { params: { id: string } }) {
     );
   }
 
-  // const leaveFamily = async () =>
-  // {
-  //   try{
-  //     const res = await fetch("http://localhost:8000/api/user/families/leave-family", {
-  //           headers: {
-  //             "Content-Type": "application/json",
-  //           },
-  //           method: "PATCH",
-  //           body: JSON.stringify(leaveFamilyData),
-  //           credentials: "include",
-  //         });
-  //     const res_msg = await res.json()
-  //     if (res.ok) {
-  //       toast.success(res_msg);
-
-  //       router.push("/families");
-  //     } else toast.error(res_msg);
-
-  //   }catch(error:any){
-  //     console.log(error)
-  //   }
-  // }
   return (
     <div className="flex flex-col bg-main">
-      {/* <Link href={'/families'} className="p-4">{'< Back to My Families'}</Link>
-            <div className="flex space-x-4">
-                <div className="flex w-96 h-10 ml-4 bg-[#333333]">
-                    
-                </div>
-                <div className="flex flex-col">
-                    <h3 className="text-4xl">Members:</h3>
-                    <MemberList />
-                    <button onClick={leaveFamily}>
-                      Leave Family
-                    </button>
-                </div>
-                
-            </div> */}
       <div className="flex-col mb-8">
         <div className="flex-col justify-center">
           <div className="flex-col flex">
             <h2 className="text-3xl border-b-4 border-[#4D94D0] font-loves font-bold mx-auto mt-1">
               {data?.family_name}
             </h2>
+            <Link
+              href={`/families/${params.id}/settings`}
+              className="mx-auto mt-1 text-sm text-links hover:underline"
+            >
+              HeartBox settings
+            </Link>
             <Image
-              src={`https://res.cloudinary.com/dcyk5quni/${data?.family_picture}`}
+              unoptimized
+              src={cldImage(data?.family_picture, 500)}
               width={250}
               height={100}
               alt={`Selected Heartbox Picture`}

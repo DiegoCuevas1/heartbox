@@ -45,7 +45,7 @@ export default function MemberList({
               backgroundColor: "#D31c60",
               color: "#FFFFFF",
             },
-          })
+          }),
         )
         .catch((error) => toast.error("Failed to copy invite code:", error));
     }

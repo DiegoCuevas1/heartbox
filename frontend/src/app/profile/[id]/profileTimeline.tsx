@@ -1,52 +1,13 @@
 "use client";
-import { Post } from "@/app/types/post";
-import Link from "next/link";
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { usePostFeed } from "@/hooks/usePostFeed";
+import LoadMore from "@/components/LoadMore";
 import TimelinePostCard from "@/app/timeline/timelineCard";
 import { motion } from "framer-motion";
 
-async function getData(id: string | undefined) {
-  try {
-    const res = await fetch(
-      `http://localhost:8000/api/user/posts?userId=${id}`,
-      {
-        method: "GET",
-        credentials: "include",
-      }
-    );
-
-    if (!res.ok) {
-      throw Error("You are not in this family");
-    }
-    return await res.json();
-  } catch (error) {
-    console.error("Error:", error);
-    throw error;
-  }
-}
-
 export default function ProfileTimeline({ id }: { id: string }) {
-  const [isLoading, setIsLoading] = useState(true);
-  const [posts, setPosts] = useState<Post[] | null>(null);
-  const router = useRouter();
-
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        setIsLoading(true);
-        const fetchedData = await getData(id);
-        setPosts(fetchedData);
-      } catch (error) {
-        console.error("Error in fetchData:", error);
-        router.push("/families");
-      } finally {
-        setIsLoading(false);
-      }
-    }
-
-    fetchData();
-  }, [id, router]);
+  // Only relics from HeartBoxes the viewer shares with this person.
+  const { posts, isLoading, isLoadingMore, hasMore, error, loadMore } =
+    usePostFeed(`/api/user/posts?userId=${encodeURIComponent(id)}`);
 
   if (isLoading) {
     return (
@@ -72,10 +33,10 @@ export default function ProfileTimeline({ id }: { id: string }) {
     );
   }
 
-  if (!posts || !Array.isArray(posts)) {
+  if (error) {
     return (
       <div className="flex justify-center items-center min-h-[200px]">
-        <p className="text-gray-600 font-loves">No posts available</p>
+        <p className="text-gray-600 font-loves">Relics could not be loaded</p>
       </div>
     );
   }
@@ -95,29 +56,29 @@ export default function ProfileTimeline({ id }: { id: string }) {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
           >
-            <p>Be the first to post in this family!</p>
-            <Link href="/create-post">
-              <button className="p-2 bg-[#4D94D0] w-36 text-xl font-loves font-bold text-white mt-3 rounded-lg shadow-[0_20px_10px_-15px_rgba(0,0,0,.3)] mx-auto hover:scale-125 active:scale-90 transition-all">
-                Create Post
-              </button>
-            </Link>
+            <p>No shared relics yet.</p>
           </motion.div>
         ) : (
           <>
             {posts.map((post, index) => (
               <motion.div
-                key={index}
+                key={post.id}
                 className="flex-col justify-center mt-2"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{
                   duration: 0.8,
-                  delay: index * 0.15,
+                  delay: Math.min(index % 20, 5) * 0.15,
                 }}
               >
                 <TimelinePostCard post={post} />
               </motion.div>
             ))}
+            <LoadMore
+              hasMore={hasMore}
+              isLoading={isLoadingMore}
+              onLoadMore={loadMore}
+            />
           </>
         )}
       </div>
