@@ -11,9 +11,6 @@ __pycache__/
 *.swo
 *.sublime-workspace
 
-# Ignore Django migration files
-*/*/migrations/*.py
-*/*/migrations/*.pyc
 
 # Ignore local settings file
 local_settings.py
@@ -24,6 +21,7 @@ local_settings.py
 # Ignore virtual environment folder
 venv/
 
-# Ignore management folder
-api/management/
 
+
+# collectstatic output
+staticfiles/

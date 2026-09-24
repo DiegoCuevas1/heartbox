@@ -1,321 +1,167 @@
-from datetime import datetime
 import json
-import os
+import logging
 from uuid import UUID
-import uuid
-from botocore.exceptions import ClientError
-import cloudinary
-from django.shortcuts import get_object_or_404, render
-from django.utils import timezone
+
+import cloudinary.uploader
+from django.conf import settings
 from django.contrib.auth import authenticate, get_user_model, login, logout
-from django.http.response import JsonResponse
 from django.contrib.auth.password_validation import validate_password
+from django.contrib.auth.tokens import default_token_generator
 from django.core.exceptions import ValidationError
+from django.core.mail import send_mail
 from django.core.validators import validate_email
-import pytz
-from rest_framework.authentication import SessionAuthentication, BasicAuthentication
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.parsers import JSONParser
-from rest_framework.decorators import api_view,authentication_classes, permission_classes
-from rest_framework.response import Response
+from django.db import IntegrityError, transaction
+from django.db.models import Count, Exists, OuterRef, Q
+from django.http.response import JsonResponse
+from django.utils.encoding import force_bytes, force_str
+from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
+from django.views.decorators.csrf import ensure_csrf_cookie
 from rest_framework import status
-from django.db.models import Q  # make sure you import Q if you use it
+from rest_framework.decorators import api_view, permission_classes, throttle_classes
+from rest_framework.permissions import AllowAny
+from rest_framework.response import Response
+from rest_framework.throttling import SimpleRateThrottle
 
-from website import settings
-
-from .models import Family, Notification, UserProfile, Post, Connection, Comment, Category
-from .serializers import FamilySerializer, NotificationSerializer, UserProfileSerializer, PostSerializer, CommentSerializer
+from .models import (
+    RELIC_CATEGORIES,
+    Category,
+    Comment,
+    Connection,
+    Family,
+    Notification,
+    Post,
+    UserProfile,
+)
+from .serializers import CommentSerializer, FamilySerializer, UserProfileSerializer
 from .utils import is_name_valid
 
+logger = logging.getLogger(__name__)
+
+DEFAULT_PAGE_SIZE = 20
+MAX_PAGE_SIZE = 50
 
 
-@api_view(['POST'])
-def user_login(request):
-    if request.method=='POST':
-        data = json.loads(request.body)
-        email = data.get('email')
-        password = data.get('password')
-        user = authenticate(email=email, password=password)
-        
-        if user is not None:
-            login(request, user)
-            request.session['email'] = email
-            return Response("Login!", status=status.HTTP_202_ACCEPTED)
-        else:
-            return Response("Email or password incorrect. Try again.", status=status.HTTP_401_UNAUTHORIZED)
-        
+############################################################
+# Throttles
+############################################################
 
-        
-@api_view(['POST'])
-def user_signup(request):
-    if request.method == 'POST':
-        
-        data = request.data
-    
-        first_name = data.get('firstName')
-        last_name = data.get('lastName')
-        email = data.get('email')
-        password = data.get('password')
-        birthdate = data.get('birthDate')
-        pin = data.get('pin')
-        profile_pic = request.FILES.get('profilePic')
-        if not is_name_valid(first_name):
-            return Response("First name was invalid", status=status.HTTP_400_BAD_REQUEST)
-        if not is_name_valid(last_name):
-            return Response("Last name was invalid", status=status.HTTP_400_BAD_REQUEST)
-
-        try:
-            validate_email(email)
-        except ValidationError as e:
-            return Response("Invalid email address. Email did not pass email validation", status=status.HTTP_400_BAD_REQUEST)
-        
-       
-        
-        db = get_user_model()
-        if db.objects.filter(email = email).exists():
-            return Response("Email address already exists in the system", status=status.HTTP_409_CONFLICT)
-        
-        
-
-        try:
-            validate_password(password)
-        except ValidationError as e:
-            return Response("Password did not pass password validation", status=status.HTTP_400_BAD_REQUEST)
+class IPThrottle(SimpleRateThrottle):
+    def get_cache_key(self, request, view):
+        return self.cache_format % {'scope': self.scope, 'ident': self.get_ident(request)}
 
 
-        
-        cloudinary_url = None
-        if profile_pic:
-            try:
-                upload_result = cloudinary.uploader.upload(profile_pic)
-                cloudinary_url = upload_result.get('public_id')
-            except Exception as e:
-                return Response(f"Error uploading image to Cloudinary: {str(e)}", status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-        user = db.objects.create_user(
-            email=email,
-            first_name=first_name,
-            last_name=last_name,
-            birthdate=birthdate,
-            pin=pin,
-            password=password,
-            profile_picture=cloudinary_url # Assign unique filename if profile pic exists
-        )
-        user.save()
-        return Response("User signup was successful", status=status.HTTP_200_OK)
-
-@api_view(['DELETE'])
-def user_logout(request):
-    if 'email' not in request.session:
-        return Response("You are not logged in!", status.HTTP_400_BAD_REQUEST)
-    
-    logout(request)
-    return Response("Logged out!", status.HTTP_200_OK)
-
-@api_view(['GET'])
-def check_login(request):
-    if 'email' not in request.session:
-        return Response('Not logged in', status=status.HTTP_200_OK)
-    else:
-        try:
-            email = request.session['email']
-            logged_in_user = UserProfile.objects.get(email = email)
-            ret_user = {
-                "id": str(logged_in_user.id),
-                "f_name": logged_in_user.first_name,
-                "l_name": logged_in_user.last_name,
-                "profilePic": logged_in_user.profile_picture
-            }
-            return JsonResponse({"data": json.dumps(ret_user), "message": "Logged In"}, status=202)
-        except UserProfile.DoesNotExist:
-            return JsonResponse({"message": "User not found"}, status=status.HTTP_404_NOT_FOUND)
-    
-        except Exception as e:
-            return JsonResponse({"message": "Error loading logged in user data"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        
-@api_view(['GET','POST'])
-@authentication_classes([SessionAuthentication, BasicAuthentication])
-@permission_classes([IsAuthenticated])
-def family(request):
-    if request.method == 'GET':
-        family_id = request.GET.get('familyId')
-        if family_id:
-            # If familyId is provided, filter the families based on the ID
-            try:
-                user_families = Family.objects.filter(id=family_id, members=request.user)
-                serializer = FamilySerializer(user_families, many=True, context={'request': request})
-                if serializer.data == []:
-                    return Response('Family Does Not Exist', status=400)
-                return Response(serializer.data, status=200)
-
-            except ValueError:
-                return Response("Invalid familyId format", status=400)
-        else:
-            user_families = request.user.families.all()
-
-        serializer = FamilySerializer(user_families, many=True, context={'request': request})
-        
-        return Response(serializer.data, status=200)
-    
-    if request.method == 'POST':
-        family_pic = request.FILES.get('family_picture')
-        
-        if family_pic:  # Check if an image was provided in the request
-            try:
-                uploaded_image = cloudinary.uploader.upload(family_pic,folder='family_pictures')  # Upload image to Cloudinary
-                unique_filename = uploaded_image.get('public_id')  # Retrieve the URL of the uploaded image
-                if not unique_filename:
-                    return Response("Failed to get image URL", status=status.HTTP_400_BAD_REQUEST)
-            except cloudinary.exceptions.Error as e:
-                return Response(f"Cloudinary upload failed: {str(e)}", status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        else:
-            unique_filename = None
-        family = Family.objects.create_family(
-            family_name=request.data['family_name'],
-            family_description=request.data['family_description'],
-            creator = request.user,
-            family_picture= unique_filename if family_pic else 'family_pictures/families'
-        )
-        # Add the current user to the family members
-        request.user.add_to_family(family)
-        family.members.add(request.user)
-            
-        return Response(family.family_name + ' was created successfully.', status=201)
-
-    return Response(serializer.errors, status=400)
-
-@api_view(['GET'])
-@authentication_classes([SessionAuthentication, BasicAuthentication])
-@permission_classes([IsAuthenticated])
-def getMembersOfFamily(request):
-    if request.method == 'GET':
-        family_id = request.GET.get('familyId')
-        if family_id:
-            # If familyId is provided, filter the families based on the ID
-            try:
-                user_family = Family.objects.get(id=family_id, members=request.user)
-                # Use the FamilySerializer to include members
-                serializer = FamilySerializer(user_family, context={'request': request})
-                
-                # Access the members directly from the serialized data
-                members = serializer.data.get('members')
-                
-                if not members:
-                    return Response('Family Does Not Exist', status=400)
-                
-                return Response(members, status=200)
-            
-            except Family.DoesNotExist:
-                return Response('Family Does Not Exist', status=400)
-            except ValueError:
-                return Response("Invalid familyId format", status=400)
-        
-        return Response('Family ID is required', status=400)
-
-@api_view(['POST'])
-@authentication_classes([SessionAuthentication,BasicAuthentication])
-@permission_classes([IsAuthenticated])
-def join_family(request):
-    if request.method == 'POST':
-        data = json.loads(request.body)
-        family = Family.objects.filter(invite_code=data.get('inviteCode')).first()
-        if family:
-            user = request.user 
-            if user in family.members.all():
-                return Response('Already in that Family',status=400)
-            user.add_to_family(family)
-            family.members.add(user)
-            
-            for member in family.members.exclude(pk=user.pk):
-                    Notification.objects.create_group_join_notification(
-                        sender=user,
-                        recipient=member,
-                        family_joined=family
-                    )
-            return Response('Successfully joined the family!',status=200)
-
-        return Response('Invalid invite code.',status=400)
-
-    return Response('Invalid request method.',status=405)
-
-@api_view(['PATCH'])
-@authentication_classes([SessionAuthentication, BasicAuthentication])
-@permission_classes([IsAuthenticated])
-def leave_family(request):
-    if request.method == 'PATCH':
-        user = request.user
-        data = json.loads(request.body)
-        family_id = data.get('familyId')
-        try:
-            family = Family.objects.get(id=int(family_id))
-        except Family.DoesNotExist:
-            return Response('Family does not exist.', status=400)
-
-        if user in family.members.all():
-            # Remove user from the family
-            user.remove_from_family(family)
-            family.members.remove(user)
-            
-            return Response('Successfully left the family.', status=200)
-        else:
-            return Response('You are not a member of this family.', status=400)
-        
-    return Response('Invalid request method.', status=405)
+class AuthThrottle(IPThrottle):
+    scope = 'auth'
 
 
-@api_view(['POST', 'DELETE'])
-@authentication_classes([SessionAuthentication, BasicAuthentication])
-@permission_classes([IsAuthenticated])
-def like_post(request, post_id):
+class PasswordResetThrottle(IPThrottle):
+    scope = 'password_reset'
+
+
+class InviteThrottle(SimpleRateThrottle):
+    scope = 'invite'
+
+    def get_cache_key(self, request, view):
+        ident = request.user.pk if request.user.is_authenticated else self.get_ident(request)
+        return self.cache_format % {'scope': self.scope, 'ident': ident}
+
+
+############################################################
+# Helpers
+############################################################
+
+def request_data(request):
+    """request.data, tolerating clients that send JSON without a content type."""
+    if request.data:
+        return request.data
     try:
-        post = Post.objects.get(id=post_id)
-        user = request.user
+        return json.loads(request.body or b'{}')
+    except ValueError:
+        return {}
 
-        if request.method == 'POST':
-            # Like the post
-            if user not in post.likes.all():
-                post.likes.add(user)
-                # Create notification for post owner if the liker is not the post owner
-                if post.user != user:
-                    Notification.objects.create(
-                        notification_type='LIKE',
-                        sender=user,
-                        recipient=post.user,
-                        post_mentioned=post
-                    )
-                return Response({'message': 'Post liked successfully'}, status=status.HTTP_200_OK)
-            return Response({'message': 'Post already liked'}, status=status.HTTP_400_BAD_REQUEST)
-        
-        elif request.method == 'DELETE':
-            # Unlike the post
-            if user in post.likes.all():
-                post.likes.remove(user)
-                # Optionally remove the like notification
-                if post.user != user:
-                    Notification.objects.filter(
-                        notification_type='LIKE',
-                        sender=user,
-                        recipient=post.user,
-                        post_mentioned=post
-                    ).delete()
-                return Response({'message': 'Post unliked successfully'}, status=status.HTTP_200_OK)
-            return Response({'message': 'Post not liked'}, status=status.HTTP_400_BAD_REQUEST)
 
-    except Post.DoesNotExist:
-        return Response({'error': 'Post not found'}, status=status.HTTP_404_NOT_FOUND)
-    except Exception as e:
-        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+def parse_int(value):
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None
 
-def add_like_info_to_post(post, user):
-    """Helper function to add like information to post data"""
-    post_data = {
+
+def get_member_family(user, family_id):
+    """The family with this id if the user belongs to it, else None."""
+    family_id = parse_int(family_id)
+    if family_id is None:
+        return None
+    return Family.objects.filter(id=family_id, members=user).first()
+
+
+def upload_media(file, media_type, folder):
+    """Validate and upload an image or video to Cloudinary. Returns the public_id.
+
+    Raises ValueError with a user-facing message if the file is rejected.
+    """
+    content_type = (getattr(file, 'content_type', '') or '').lower()
+    if media_type == 'IMAGE':
+        if not content_type.startswith('image/'):
+            raise ValueError('That file is not an image.')
+        if file.size > settings.MAX_IMAGE_UPLOAD_BYTES:
+            raise ValueError(f'Images must be under {settings.MAX_IMAGE_UPLOAD_BYTES // (1024 * 1024)}MB.')
+        options = {
+            'resource_type': 'image',
+            # Downscale on upload so we never store (or serve) full-size phone photos.
+            'transformation': [{'width': 2048, 'height': 2048, 'crop': 'limit', 'quality': 'auto'}],
+        }
+    elif media_type == 'VIDEO':
+        if not content_type.startswith('video/'):
+            raise ValueError('That file is not a video.')
+        if file.size > settings.MAX_VIDEO_UPLOAD_BYTES:
+            raise ValueError(f'Videos must be under {settings.MAX_VIDEO_UPLOAD_BYTES // (1024 * 1024)}MB.')
+        options = {'resource_type': 'video'}
+    else:
+        raise ValueError('Unsupported media type.')
+
+    try:
+        result = cloudinary.uploader.upload(file, folder=folder, **options)
+    except Exception:
+        logger.exception('Cloudinary upload failed')
+        raise ValueError('We could not upload that file. Please try again.')
+    public_id = result.get('public_id')
+    if not public_id:
+        raise ValueError('We could not upload that file. Please try again.')
+    return public_id
+
+
+def posts_for(user):
+    """Base queryset for posts with everything serialize_post needs, in a fixed number of queries."""
+    liked_by_user = Post.likes.through.objects.filter(post_id=OuterRef('pk'), userprofile_id=user.pk)
+    return (
+        Post.objects.visible_to(user)
+        .select_related('user', 'family')
+        .prefetch_related('categories')
+        .annotate(likes_count=Count('likes', distinct=True), is_liked=Exists(liked_by_user))
+        .order_by('-datePosted', '-id')
+    )
+
+
+def paginate(request, queryset):
+    """Cursor pagination on id: ?before=<last post id>&limit=<n>."""
+    limit = parse_int(request.GET.get('limit')) or DEFAULT_PAGE_SIZE
+    limit = max(1, min(limit, MAX_PAGE_SIZE))
+    before = parse_int(request.GET.get('before'))
+    if before is not None:
+        queryset = queryset.filter(id__lt=before)
+    return list(queryset[:limit])
+
+
+def serialize_post(post):
+    return {
         'id': post.id,
         'title': post.title,
-        'user': post.user.id,
+        'user': post.user_id,
         'message': post.message,
         'datePosted': post.datePosted,
-        'likes_count': post.likes.count(),
-        'is_liked': user in post.likes.all(),
+        'likes_count': post.likes_count,
+        'is_liked': post.is_liked,
         'user_details': {
             'id': post.user.id,
             'first_name': post.user.first_name,
@@ -329,573 +175,791 @@ def add_like_info_to_post(post, user):
         },
         'media_type': post.media_type,
         'media_url': post.media_url,
-        'categories': [{'id': cat.id, 'name': cat.name} for cat in post.categories.all()]
+        'categories': [{'id': cat.id, 'name': cat.name} for cat in post.categories.all()],
     }
-    return post_data
+
+
+def resolve_category(name):
+    """Map a category name or URL slug ("new-year") to a Category, or None."""
+    if not name:
+        return None
+    normalized = name.replace('-', ' ').strip().lower()
+    for category_name in RELIC_CATEGORIES:
+        if category_name.lower() == normalized:
+            category, _ = Category.objects.get_or_create(name=category_name)
+            return category
+    return None
+
+
+def can_view_profile(viewer, other):
+    if viewer == other:
+        return True
+    shares_family = Family.objects.filter(members=viewer).filter(members=other).exists()
+    if shares_family:
+        return True
+    return Connection.objects.filter(
+        Q(from_user=viewer, to_user=other) | Q(from_user=other, to_user=viewer)
+    ).exists()
+
+
+############################################################
+# Auth
+############################################################
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+@throttle_classes([AuthThrottle])
+def user_login(request):
+    data = request_data(request)
+    email = (data.get('email') or '').strip().lower()
+    password = data.get('password') or ''
+    user = authenticate(request, email=email, password=password)
+
+    if user is None:
+        return Response("Email or password incorrect. Try again.", status=status.HTTP_401_UNAUTHORIZED)
+    login(request, user, backend='django.contrib.auth.backends.ModelBackend')
+    return Response("Login!", status=status.HTTP_202_ACCEPTED)
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+@throttle_classes([AuthThrottle])
+def user_signup(request):
+    data = request_data(request)
+
+    first_name = (data.get('firstName') or '').strip()
+    last_name = (data.get('lastName') or '').strip()
+    email = (data.get('email') or '').strip().lower()
+    password = data.get('password') or ''
+    birthdate = data.get('birthDate') or None
+    pin = data.get('pin') or None
+    profile_pic = request.FILES.get('profilePic')
+
+    if not is_name_valid(first_name):
+        return Response("First name was invalid", status=status.HTTP_400_BAD_REQUEST)
+    if not is_name_valid(last_name):
+        return Response("Last name was invalid", status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        validate_email(email)
+    except ValidationError:
+        return Response("Invalid email address. Email did not pass email validation", status=status.HTTP_400_BAD_REQUEST)
+
+    User = get_user_model()
+    if User.objects.filter(email__iexact=email).exists():
+        return Response("Email address already exists in the system", status=status.HTTP_409_CONFLICT)
+
+    try:
+        validate_password(password, User(email=email, first_name=first_name, last_name=last_name))
+    except ValidationError as e:
+        return Response(" ".join(e.messages), status=status.HTTP_400_BAD_REQUEST)
+
+    if pin is not None and not (str(pin).isdigit() and 4 <= len(str(pin)) <= 8):
+        return Response("PIN must be 4-8 digits", status=status.HTTP_400_BAD_REQUEST)
+
+    profile_picture = None
+    if profile_pic:
+        try:
+            profile_picture = upload_media(profile_pic, 'IMAGE', 'profile_pictures')
+        except ValueError as e:
+            return Response(str(e), status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        User.objects.create_user(
+            email=email,
+            first_name=first_name,
+            last_name=last_name,
+            birthdate=birthdate,
+            pin=pin,
+            password=password,
+            profile_picture=profile_picture,
+        )
+    except (ValidationError, IntegrityError):
+        return Response("Could not create that account. Check your details and try again.",
+                        status=status.HTTP_400_BAD_REQUEST)
+    return Response("User signup was successful", status=status.HTTP_200_OK)
+
+
+@api_view(['POST', 'DELETE'])
+@permission_classes([AllowAny])
+def user_logout(request):
+    if not request.user.is_authenticated:
+        return Response("You are not logged in!", status.HTTP_400_BAD_REQUEST)
+    logout(request)
+    return Response("Logged out!", status.HTTP_200_OK)
+
+
+@ensure_csrf_cookie
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def check_login(request):
+    """Reports the signed-in user. Also sets the CSRF cookie the frontend echoes back."""
+    if not request.user.is_authenticated:
+        return Response('Not logged in', status=status.HTTP_200_OK)
+    user = request.user
+    ret_user = {
+        "id": str(user.id),
+        "f_name": user.first_name,
+        "l_name": user.last_name,
+        "profilePic": user.profile_picture,
+    }
+    return JsonResponse({"data": json.dumps(ret_user), "message": "Logged In"}, status=202)
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+@throttle_classes([PasswordResetThrottle])
+def forgot_password(request):
+    data = request_data(request)
+    email = (data.get('email') or '').strip().lower()
+    user = UserProfile.objects.filter(email__iexact=email, is_active=True).first()
+    if user and user.has_usable_password():
+        uid = urlsafe_base64_encode(force_bytes(user.pk))
+        token = default_token_generator.make_token(user)
+        link = f"{settings.FRONTEND_URL}/auth/reset-password?uid={uid}&token={token}"
+        try:
+            send_mail(
+                subject="Reset your HeartBox password",
+                message=(
+                    f"Hi {user.first_name},\n\n"
+                    f"Someone asked to reset the password for your HeartBox account. "
+                    f"If that was you, open this link to choose a new one:\n\n{link}\n\n"
+                    f"If you didn't ask for this, you can ignore this email."
+                ),
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[user.email],
+            )
+        except Exception:
+            logger.exception('Failed to send password reset email')
+    # Same response either way so this can't be used to discover accounts.
+    return Response("If that email has an account, a reset link is on its way.", status=status.HTTP_200_OK)
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+@throttle_classes([PasswordResetThrottle])
+def reset_password(request):
+    data = request_data(request)
+    try:
+        uid = force_str(urlsafe_base64_decode(data.get('uid') or ''))
+        user = UserProfile.objects.get(pk=uid)
+    except (TypeError, ValueError, OverflowError, UserProfile.DoesNotExist, ValidationError):
+        user = None
+
+    if user is None or not default_token_generator.check_token(user, data.get('token') or ''):
+        return Response("This reset link is invalid or has expired.", status=status.HTTP_400_BAD_REQUEST)
+
+    password = data.get('password') or ''
+    try:
+        validate_password(password, user)
+    except ValidationError as e:
+        return Response(" ".join(e.messages), status=status.HTTP_400_BAD_REQUEST)
+
+    user.set_password(password)
+    user.save(update_fields=['password'])
+    return Response("Your password has been reset. You can sign in now.", status=status.HTTP_200_OK)
+
+
+############################################################
+# Families (HeartBoxes)
+############################################################
 
 @api_view(['GET', 'POST'])
-@authentication_classes([SessionAuthentication, BasicAuthentication])
-@permission_classes([IsAuthenticated])
+def family(request):
+    if request.method == 'GET':
+        family_id = request.GET.get('familyId')
+        if family_id:
+            found = get_member_family(request.user, family_id)
+            if not found:
+                return Response('Family Does Not Exist', status=400)
+            families = [found]
+        else:
+            families = request.user.families.all().order_by('family_name')
+        serializer = FamilySerializer(families, many=True, context={'request': request})
+        return Response(serializer.data, status=200)
+
+    # POST: create a family
+    data = request.data
+    family_name = (data.get('family_name') or '').strip()
+    if not family_name or len(family_name) > 250:
+        return Response("Give your HeartBox a name (up to 250 characters).", status=status.HTTP_400_BAD_REQUEST)
+    family_description = (data.get('family_description') or '').strip()[:500]
+
+    family_picture = None
+    family_pic = request.FILES.get('family_picture')
+    if family_pic:
+        try:
+            family_picture = upload_media(family_pic, 'IMAGE', 'family_pictures')
+        except ValueError as e:
+            return Response(str(e), status=status.HTTP_400_BAD_REQUEST)
+
+    new_family = Family.objects.create_family(
+        family_name=family_name,
+        family_description=family_description,
+        creator=request.user,
+        family_picture=family_picture,
+    )
+    return Response(new_family.family_name + ' was created successfully.', status=201)
+
+
+@api_view(['PATCH'])
+def update_family(request, family_id):
+    """Edit a family's details or rotate its invite code. Creator only."""
+    found = get_member_family(request.user, family_id)
+    if not found:
+        return Response('Family Does Not Exist', status=404)
+    if found.creator_id != request.user.pk:
+        return Response('Only the HeartBox creator can change its settings.', status=403)
+
+    data = request.data
+    if 'family_name' in data:
+        name = (data.get('family_name') or '').strip()
+        if not name or len(name) > 250:
+            return Response("Give your HeartBox a name (up to 250 characters).", status=400)
+        found.family_name = name
+    if 'family_description' in data:
+        found.family_description = (data.get('family_description') or '').strip()[:500]
+    family_pic = request.FILES.get('family_picture')
+    if family_pic:
+        try:
+            found.family_picture = upload_media(family_pic, 'IMAGE', 'family_pictures')
+        except ValueError as e:
+            return Response(str(e), status=400)
+    found.save()
+
+    if str(data.get('regenerate_invite_code', '')).lower() in ('1', 'true'):
+        found.regenerate_invite_code()
+
+    return Response(FamilySerializer(found, context={'request': request}).data, status=200)
+
+
+@api_view(['POST'])
+def remove_family_member(request, family_id):
+    """Remove someone from a family. Creator only."""
+    found = get_member_family(request.user, family_id)
+    if not found:
+        return Response('Family Does Not Exist', status=404)
+    if found.creator_id != request.user.pk:
+        return Response('Only the HeartBox creator can remove members.', status=403)
+
+    user_id = request.data.get('userId')
+    if str(user_id) == str(request.user.pk):
+        return Response('Use "Leave" to leave your own HeartBox.', status=400)
+    try:
+        member = found.members.get(pk=user_id)
+    except (UserProfile.DoesNotExist, ValidationError, ValueError):
+        return Response('That person is not in this HeartBox.', status=404)
+    found.members.remove(member)
+    return Response(f'{member.first_name} was removed.', status=200)
+
+
+@api_view(['GET'])
+def getMembersOfFamily(request):
+    family_id = request.GET.get('familyId')
+    if not family_id:
+        return Response('Family ID is required', status=400)
+    found = get_member_family(request.user, family_id)
+    if not found:
+        return Response('Family Does Not Exist', status=400)
+    members = found.members.exclude(pk=request.user.pk)
+    return Response(UserProfileSerializer(members, many=True, context={'request': request}).data, status=200)
+
+
+@api_view(['POST'])
+@throttle_classes([InviteThrottle])
+def join_family(request):
+    data = request_data(request)
+    code = (data.get('inviteCode') or '').strip().upper()
+    found = Family.objects.filter(invite_code__iexact=code).first() if code else None
+    if not found:
+        return Response('Invalid invite code.', status=400)
+
+    user = request.user
+    if found.is_member(user):
+        return Response('Already in that Family', status=400)
+    found.members.add(user)
+
+    Notification.objects.bulk_create([
+        Notification(notification_type='GROUP_JOIN', sender=user, recipient=member, family_joined=found)
+        for member in found.members.exclude(pk=user.pk)
+    ])
+    return Response('Successfully joined the family!', status=200)
+
+
+@api_view(['PATCH', 'POST'])
+def leave_family(request):
+    data = request_data(request)
+    found = get_member_family(request.user, data.get('familyId'))
+    if not found:
+        return Response('You are not a member of this family.', status=400)
+
+    with transaction.atomic():
+        found.members.remove(request.user)
+        if found.creator_id == request.user.pk:
+            # Hand ownership to the longest-standing remaining member.
+            next_owner = found.members.order_by('date_joined').first()
+            found.creator = next_owner
+            found.save(update_fields=['creator'])
+    return Response('Successfully left the family.', status=200)
+
+
+############################################################
+# Posts (Relics)
+############################################################
+
+@api_view(['POST', 'DELETE'])
+def like_post(request, post_id):
+    post = Post.objects.visible_to(request.user).filter(id=post_id).select_related('user').first()
+    if not post:
+        return Response({'error': 'Post not found'}, status=status.HTTP_404_NOT_FOUND)
+    user = request.user
+    already_liked = post.likes.filter(pk=user.pk).exists()
+
+    if request.method == 'POST':
+        if already_liked:
+            return Response({'message': 'Post already liked'}, status=status.HTTP_400_BAD_REQUEST)
+        post.likes.add(user)
+        if post.user_id != user.pk:
+            Notification.objects.create_notif('LIKE', user, post.user, post_mentioned=post)
+        return Response({'message': 'Post liked successfully'}, status=status.HTTP_200_OK)
+
+    if not already_liked:
+        return Response({'message': 'Post not liked'}, status=status.HTTP_400_BAD_REQUEST)
+    post.likes.remove(user)
+    Notification.objects.filter(
+        notification_type='LIKE', sender=user, recipient_id=post.user_id, post_mentioned=post
+    ).delete()
+    return Response({'message': 'Post unliked successfully'}, status=status.HTTP_200_OK)
+
+
+@api_view(['GET', 'POST'])
 def post(request, category=None):
     if request.method == 'GET':
-        user_id = request.GET.get('userId')
-        post_id = request.GET.get('postId')
-        family_id = request.GET.get('familyId')
+        queryset = posts_for(request.user)
 
-        if category:
-            try:
-                category_obj = Category.objects.get(name__iexact=category)
-                posts = Post.objects.filter(categories=category_obj).order_by('-datePosted')
-                serialized_posts = [add_like_info_to_post(post, request.user) for post in posts]
-                return Response(serialized_posts, status=200)
-            except Category.DoesNotExist:
+        if category is not None:
+            category_obj = resolve_category(category)
+            if not category_obj:
                 return Response([], status=200)
+            return Response([serialize_post(p) for p in paginate(request, queryset.filter(categories=category_obj))])
 
+        post_id = request.GET.get('postId')
         if post_id:
-            try:
-                post = Post.objects.get(id=post_id)
-                post_data = add_like_info_to_post(post, request.user)
-                return Response(post_data, status=200)
-            except Post.DoesNotExist:
+            found = queryset.filter(id=parse_int(post_id)).first() if parse_int(post_id) else None
+            if not found:
                 return Response("Post not found", status=404)
-            
-        if family_id:
-            try:
-                family = Family.objects.get(id=family_id)
-                if request.user in family.members.all():
-                    posts = Post.objects.get_posts_in_family(family).order_by('-datePosted')
-                    serialized_posts = [add_like_info_to_post(post, request.user) for post in posts]
-                    return Response(serialized_posts, status=200)
-                else:
-                    return Response("User is not a member of this family", status=status.HTTP_403_FORBIDDEN)
-            except Family.DoesNotExist:
-                return Response("Family not found", status=404)
+            return Response(serialize_post(found), status=200)
 
+        family_id = request.GET.get('familyId')
+        if family_id:
+            found_family = get_member_family(request.user, family_id)
+            if not found_family:
+                return Response("User is not a member of this family", status=status.HTTP_403_FORBIDDEN)
+            queryset = queryset.filter(family=found_family)
+
+        user_id = request.GET.get('userId')
         if user_id:
             try:
                 UUID(user_id)
-                user = UserProfile.objects.get(id=user_id)
-                posts = Post.objects.filter(user=user).order_by('-datePosted')
-                serialized_posts = [add_like_info_to_post(post, request.user) for post in posts]
-                return Response(serialized_posts, status=200)
-            except (ValueError, UserProfile.DoesNotExist):
+            except ValueError:
                 return Response("User not found", status=404)
+            # Only relics from HeartBoxes the viewer shares with this person.
+            queryset = queryset.filter(user_id=user_id)
 
-        # Get all posts from user's families
-        user = UserProfile.objects.get(id=request.user.id)
-        families = user.families.all()
-        family_ids = [family.id for family in families]
-        posts = Post.objects.filter(family__id__in=family_ids).order_by('-datePosted')
-        serialized_posts = [add_like_info_to_post(post, request.user) for post in posts]
-        return Response(serialized_posts, status=200)
+        # With no filter: every relic from every HeartBox the user belongs to.
+        return Response([serialize_post(p) for p in paginate(request, queryset)], status=200)
 
-    if request.method == 'POST':
+    # POST: create a relic
+    data = request.data
+    target_family = get_member_family(request.user, data.get('familyId'))
+    if not target_family:
+        return Response('Pick a HeartBox you belong to.', status=status.HTTP_400_BAD_REQUEST)
+
+    title = (data.get('title') or '').strip()
+    if not title or len(title) > 200:
+        return Response('Give your relic a title (up to 200 characters).', status=status.HTTP_400_BAD_REQUEST)
+    message = (data.get('description') or '').strip()
+
+    media_file = request.FILES.get('media')
+    media_type = data.get('media_type') if media_file else None
+    media_url = None
+    if media_file:
         try:
-            user_profile = UserProfile.objects.get(id=request.user.id)
-        except UserProfile.DoesNotExist:
-            return Response({'error': 'User profile does not exist'}, status=status.HTTP_404_NOT_FOUND)
-        
-        # Create a mutable copy of the data
-        data = request.data.copy()
-        data['user'] = request.user.id
-        
-        converted_tz = pytz.timezone('US/Eastern')
-        data['datePosted'] = datetime.now(converted_tz)
+            media_url = upload_media(media_file, media_type, 'post_media')
+        except ValueError as e:
+            return Response(str(e), status=status.HTTP_400_BAD_REQUEST)
 
-        # Handle media upload
-        media_file = request.FILES.get('media')
-        media_type = data.get('media_type')
-        media_url = None
+    category_obj = resolve_category(data.get('category'))
+    Post.objects.create_post(
+        title=title,
+        message=message,
+        user=request.user,
+        family=target_family,
+        media_type=media_type,
+        media_url=media_url,
+        categories=[category_obj] if category_obj else None,
+    )
+    return Response('Your relic was successfully created', status=status.HTTP_201_CREATED)
 
-        if media_file and media_type:
-            try:
-                upload_options = {
-                    'folder': 'post_media',
-                    'resource_type': 'auto'
-                }
-                
-                upload_result = cloudinary.uploader.upload(media_file, **upload_options)
-                media_url = upload_result.get('public_id')
-                
-                if not media_url:
-                    return Response("Failed to upload media", status=status.HTTP_400_BAD_REQUEST)
-                
-            except Exception as e:
-                return Response(f"Error uploading media: {str(e)}", status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-        # Handle categories
-        category_name = data.get('category')
-        categories = None
-        if category_name and category_name.lower() != 'none':
-            # Get or create the category
-            category, created = Category.objects.get_or_create(
-                name=category_name,
-                defaults={'description': f'Category for {category_name} posts'}
-            )
-            categories = [category]
+@api_view(['PATCH', 'DELETE'])
+def post_detail(request, post_id):
+    """Edit (author only) or delete (author or HeartBox creator) a relic."""
+    found = Post.objects.visible_to(request.user).filter(id=post_id).select_related('family').first()
+    if not found:
+        return Response("Post not found", status=404)
 
-        serializer = PostSerializer(data=data, context={'request': request})
-        
-        if serializer.is_valid():
-            try:
-                family = get_object_or_404(Family, id=data['familyId'])
-            except Family.DoesNotExist:
-                return Response({'error': 'Family does not exist'}, status=status.HTTP_404_NOT_FOUND)
+    is_author = found.user_id == request.user.pk
+    if request.method == 'DELETE':
+        if not (is_author or found.family.creator_id == request.user.pk):
+            return Response("You can't delete this relic.", status=403)
+        found.delete()
+        return Response("Relic deleted.", status=200)
 
-            post = Post.objects.create_post(
-                title=data.get('title'),
-                message=data.get('description'),
-                user=UserProfile.objects.get(id=request.user.id),
-                family=Family.objects.get(id=data['familyId']),
-                date_posted=data['datePosted'],
-                media_type=media_type,
-                media_url=media_url,
-                categories=categories
-            )
-            return Response('Your post was successfully created', status=status.HTTP_201_CREATED)
-        
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
-    return Response('Invalid Method Request', status=status.HTTP_403_FORBIDDEN)
+    if not is_author:
+        return Response("Only the author can edit this relic.", status=403)
+    data = request.data
+    if 'title' in data:
+        title = (data.get('title') or '').strip()
+        if not title or len(title) > 200:
+            return Response('Give your relic a title (up to 200 characters).', status=400)
+        found.title = title
+    if 'description' in data:
+        found.message = (data.get('description') or '').strip()
+    found.save()
+    if 'category' in data:
+        category_obj = resolve_category(data.get('category'))
+        found.categories.set([category_obj] if category_obj else [])
+    return Response(serialize_post(posts_for(request.user).get(id=found.id)), status=200)
+
 
 @api_view(['GET'])
-@authentication_classes([SessionAuthentication, BasicAuthentication])
-@permission_classes([IsAuthenticated])
+def categories(request):
+    for name in RELIC_CATEGORIES:
+        Category.objects.get_or_create(name=name)
+    ordered = {name: i for i, name in enumerate(RELIC_CATEGORIES)}
+    cats = sorted(Category.objects.filter(name__in=RELIC_CATEGORIES), key=lambda c: ordered[c.name])
+    return Response([{'id': c.id, 'name': c.name} for c in cats], status=200)
+
+
+############################################################
+# Users & search
+############################################################
+
+@api_view(['GET'])
 def get_user_details(request):
-    user_id = request.GET.get('userId')  # Extract userId from query parameters
-    
+    user_id = request.GET.get('userId')
     if not user_id:
         return Response({"error": "userId query parameter is required"}, status=400)
-
     try:
-        # Validate if the provided user_id is a valid UUID
         UUID(user_id)
     except ValueError:
         return Response({"error": "Invalid userId format"}, status=400)
 
-    try:
-        # Fetch the user by UUID
-        user = UserProfile.objects.get(id=user_id)
-        serializer = UserProfileSerializer(user, context={'request': request})
-        return Response(serializer.data, status=200)
-    except UserProfile.DoesNotExist:
+    user = UserProfile.objects.filter(id=user_id).first()
+    if not user or not can_view_profile(request.user, user):
         return Response({"error": "User not found"}, status=404)
+    return Response(UserProfileSerializer(user, context={'request': request}).data, status=200)
+
 
 @api_view(['GET'])
-@authentication_classes([SessionAuthentication, BasicAuthentication])
-@permission_classes([IsAuthenticated])
+def search(request):
+    """Search people you share a HeartBox or connection with, your HeartBoxes, and relics you can see."""
+    q = (request.GET.get('q') or '').strip()
+    if len(q) < 2:
+        return Response({'people': [], 'families': [], 'relics': []})
+
+    me = request.user
+    name_match = Q(first_name__icontains=q) | Q(last_name__icontains=q)
+    if ' ' in q:
+        first, _, last = q.partition(' ')
+        name_match |= Q(first_name__icontains=first, last_name__icontains=last.strip())
+    connected_ids = Connection.objects.filter(Q(from_user=me) | Q(to_user=me)).values_list('from_user', 'to_user')
+    related_ids = {uid for pair in connected_ids for uid in pair}
+    people = (
+        UserProfile.objects.filter(name_match)
+        .filter(Q(families__members=me) | Q(id__in=related_ids))
+        .exclude(pk=me.pk)
+        .distinct()[:10]
+    )
+    families = me.families.filter(family_name__icontains=q)[:10]
+    relics = posts_for(me).filter(Q(title__icontains=q) | Q(message__icontains=q))[:20]
+
+    return Response({
+        'people': [
+            {'id': str(p.id), 'first_name': p.first_name, 'last_name': p.last_name, 'profile_picture': p.profile_picture}
+            for p in people
+        ],
+        'families': [
+            {'id': f.id, 'family_name': f.family_name, 'family_picture': f.family_picture} for f in families
+        ],
+        'relics': [serialize_post(p) for p in relics],
+    })
+
+
+############################################################
+# Notifications
+############################################################
+
+def serialize_notification(notification):
+    family_details = None
+    if notification.family_joined_id:
+        family_details = {
+            'id': notification.family_joined.id,
+            'family_name': notification.family_joined.family_name,
+            'family_picture': notification.family_joined.family_picture,
+        }
+    return {
+        'id': notification.id,
+        'notification_type': notification.notification_type,
+        'timestamp': notification.timestamp,
+        'sender_details': {
+            'id': notification.sender.id,
+            'first_name': notification.sender.first_name,
+            'last_name': notification.sender.last_name,
+            'profile_picture': notification.sender.profile_picture,
+        },
+        'family_details': family_details,
+        'connection_id': str(notification.connection_id) if notification.connection_id else None,
+        'comment_message': notification.comment.message if notification.comment_id else None,
+        'post_id': notification.post_mentioned_id,
+        'read': notification.read,
+    }
+
+
+@api_view(['GET'])
 def notification(request):
-    if request.method == 'GET':
-        notificationId = request.GET.get('notificationId')
-        unread_only = request.GET.get('unread_only', 'false').lower() == 'true'
+    queryset = (
+        Notification.objects.filter(recipient=request.user)
+        .select_related('sender', 'family_joined', 'comment')
+        .order_by('-timestamp')
+    )
 
-        if notificationId:  # Check if notificationId is provided
-            try:
-                notification = Notification.objects.get(id=notificationId)
-                serializer = NotificationSerializer(notification)
-                family = Family.objects.get(id=serializer.data['family_joined'])
-                family_details = {
-                    'id':family.id,
-                    'family_name':family.family_name,
-                    'family_picture':family.family_picture
-                }
-                user_details = {
-                    'id': notification.sender.id,
-                    'first_name': notification.sender.first_name,
-                    'last_name': notification.sender.last_name,
-                    'profile_picture': notification.sender.profile_picture,  
-                }
-                notification_details = {
-                    'sender_details': user_details,
-                    'id': serializer.data['id'],
-                    'notification_type': serializer.data['notification_type'],
-                    'timestamp': serializer.data['timestamp'],
-                    'family_details':family_details,
-                    'connection_id': str(notification.connection.id) if notification.connection else None,
-                    'comment_message': notification.comment.message if notification.comment else None,
-                    'post_id': notification.post_mentioned.id if notification.post_mentioned else None
-                }
-                return Response(notification_details, status=status.HTTP_200_OK)
-            except Notification.DoesNotExist:
-                return Response({'error': 'Notification not found'}, status=status.HTTP_404_NOT_FOUND)
+    notification_id = request.GET.get('notificationId')
+    if notification_id:
+        found = queryset.filter(id=parse_int(notification_id)).first() if parse_int(notification_id) else None
+        if not found:
+            return Response({'error': 'Notification not found'}, status=status.HTTP_404_NOT_FOUND)
+        return Response(serialize_notification(found), status=status.HTTP_200_OK)
 
-        # Get notifications for the user
-        notifications_query = Notification.objects.filter(recipient_id=request.user.id)
-        if unread_only:
-            notifications_query = notifications_query.filter(read=False)
-        
-        notifications = notifications_query.order_by('-timestamp')
-        serialized_notifications = []
-        for notification in notifications:
-            serializer = NotificationSerializer(notification)
-            family_details = None
-            if serializer.data['family_joined']:
-                family = Family.objects.get(id=serializer.data['family_joined'])
-                family_details = {
-                    'id': family.id,
-                    'family_name': family.family_name,
-                    'family_picture': family.family_picture
-                }
-            sender_details = {
-                'id': notification.sender.id,
-                'first_name': notification.sender.first_name,
-                'last_name': notification.sender.last_name,
-                'profile_picture': notification.sender.profile_picture,  
-            }
-            notification_details = {
-                'id': serializer.data['id'],
-                'notification_type': serializer.data['notification_type'],
-                'timestamp': serializer.data['timestamp'],
-                'sender_details': sender_details,
-                'family_details': family_details,
-                'connection_id': str(notification.connection.id) if notification.connection else None,
-                'comment_message': notification.comment.message if notification.comment else None,
-                'post_id': notification.post_mentioned.id if notification.post_mentioned else None,
-                'read': notification.read
-            }
-            serialized_notifications.append(notification_details)
+    if request.GET.get('unread_only', 'false').lower() == 'true':
+        queryset = queryset.filter(read=False)
+    limit = min(parse_int(request.GET.get('limit')) or MAX_PAGE_SIZE, 100)
+    return Response([serialize_notification(n) for n in queryset[:limit]], status=status.HTTP_200_OK)
 
-        return Response(serialized_notifications, status=status.HTTP_200_OK)
-    
-    return Response('Invalid Method Request', status=status.HTTP_403_FORBIDDEN)
-
-    
 
 @api_view(['GET'])
-@authentication_classes([SessionAuthentication, BasicAuthentication])
-@permission_classes([IsAuthenticated])
 def notification_count(request):
-    if request.method == 'GET':
-        # Only count unread notifications for the current user
-        notification_count = Notification.objects.filter(
-            recipient_id=request.user.id,
-            read=False
-        ).count()
-        return Response({'count': notification_count}, status=status.HTTP_200_OK)
-    return Response('Invalid Method Request', status=status.HTTP_403_FORBIDDEN)
+    count = Notification.objects.filter(recipient=request.user, read=False).count()
+    return Response({'count': count}, status=status.HTTP_200_OK)
+
 
 @api_view(['POST'])
-@authentication_classes([SessionAuthentication, BasicAuthentication])
-@permission_classes([IsAuthenticated])
 def mark_notification_read(request, notification_id):
-    try:
-        notification = Notification.objects.get(
-            id=notification_id,
-            recipient=request.user
-        )
-        notification.mark_as_read()
-        return Response(status=status.HTTP_200_OK)
-    except Notification.DoesNotExist:
-        return Response(
-            {"error": "Notification not found"},
-            status=status.HTTP_404_NOT_FOUND
-        )
-    except Exception as e:
-        return Response(
-            {"error": str(e)},
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR
-        )
+    updated = Notification.objects.filter(id=notification_id, recipient=request.user).update(read=True)
+    if not updated:
+        return Response({"error": "Notification not found"}, status=status.HTTP_404_NOT_FOUND)
+    return Response(status=status.HTTP_200_OK)
+
 
 @api_view(['POST'])
-@authentication_classes([SessionAuthentication, BasicAuthentication])
-@permission_classes([IsAuthenticated])
 def mark_all_notifications_read(request):
-    try:
-        Notification.objects.filter(
-            recipient=request.user,
-            read=False
-        ).update(read=True)
-        return Response({"message": "All notifications marked as read"}, status=status.HTTP_200_OK)
-    except Exception as e:
-        return Response(
-            {"error": str(e)},
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR
-        )
+    Notification.objects.filter(recipient=request.user, read=False).update(read=True)
+    return Response({"message": "All notifications marked as read"}, status=status.HTTP_200_OK)
+
+
+############################################################
+# Connections
+############################################################
 
 @api_view(['GET'])
-@authentication_classes([SessionAuthentication, BasicAuthentication])
-@permission_classes([IsAuthenticated])
 def connections(request):
-    if request.method == 'GET':
-        user = request.user
+    user = request.user
+    accepted = Connection.objects.filter(Q(from_user=user) | Q(to_user=user), status='ACCEPTED')
+    other_ids = {c.to_user_id if c.from_user_id == user.pk else c.from_user_id for c in accepted}
+    connected_users = UserProfile.objects.filter(id__in=other_ids)
+    serializer = UserProfileSerializer(connected_users, many=True, context={'request': request})
+    return Response(serializer.data, status=status.HTTP_200_OK)
 
-        # Get all accepted connection objects (from either side)
-        accepted_connections = Connection.objects.filter(
-            Q(from_user=user) | Q(to_user=user),
-            status='ACCEPTED'
-        )
-
-        # Gather the "other" user for each accepted connection
-        connected_users = []
-        for connection in accepted_connections:
-            if connection.from_user == user:
-                connected_users.append(connection.to_user)
-            else:
-                connected_users.append(connection.from_user)
-
-        # Remove potential duplicates (if any)
-        connected_users = list(set(connected_users))
-
-        serializer = UserProfileSerializer(connected_users, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-    return Response({'error': 'Invalid Method Request'}, status=status.HTTP_403_FORBIDDEN)
 
 @api_view(['POST'])
-@authentication_classes([SessionAuthentication, BasicAuthentication])
-@permission_classes([IsAuthenticated])
 def send_connection_request(request):
-    data = request.data
-    to_user_id = data.get('userId')  # The user ID to whom the connection request is sent
-
+    to_user_id = request.data.get('userId')
     if not to_user_id:
         return Response({"error": "userId is required"}, status=status.HTTP_400_BAD_REQUEST)
-
     try:
         to_user = UserProfile.objects.get(id=to_user_id)
-    except UserProfile.DoesNotExist:
+    except (UserProfile.DoesNotExist, ValidationError, ValueError):
+        return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+    if to_user == request.user:
+        return Response({"message": "You can't connect with yourself."}, status=status.HTTP_400_BAD_REQUEST)
+    if not can_view_profile(request.user, to_user):
         return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
 
-    # Check if a connection already exists
-    existing_connection = Connection.objects.filter(from_user=request.user, to_user=to_user).first()
-    if existing_connection:
-        if existing_connection.status == 'PENDING':
-            return Response({"message": "Connection request already sent."}, status=status.HTTP_400_BAD_REQUEST)
-        elif existing_connection.status == 'ACCEPTED':
-            return Response({"message": "You are already connected."}, status=status.HTTP_400_BAD_REQUEST)
+    reverse = Connection.objects.filter(from_user=to_user, to_user=request.user).first()
+    if reverse and reverse.status in ('PENDING', 'ACCEPTED'):
+        message = ("You are already connected." if reverse.status == 'ACCEPTED'
+                   else "They already sent you a request. Accept it from your notifications.")
+        return Response({"message": message}, status=status.HTTP_400_BAD_REQUEST)
 
-    # Create a new connection request
-    connection = Connection.objects.create(from_user=request.user, to_user=to_user, status='PENDING')
-    Notification.objects.create_notif(
-        notification_type='CONNECTION_REQUEST',
-        sender=request.user,
-        recipient=to_user,
-        connection=connection,
-        )
+    connection = Connection.objects.filter(from_user=request.user, to_user=to_user).first()
+    if connection:
+        if connection.status == 'PENDING':
+            return Response({"message": "Connection request already sent."}, status=status.HTTP_400_BAD_REQUEST)
+        if connection.status == 'ACCEPTED':
+            return Response({"message": "You are already connected."}, status=status.HTTP_400_BAD_REQUEST)
+        # Previously declined: ask again.
+        connection.status = 'PENDING'
+        connection.save(update_fields=['status', 'updated_at'])
+    else:
+        connection = Connection.objects.create(from_user=request.user, to_user=to_user, status='PENDING')
+
+    Notification.objects.create_notif('CONNECTION_REQUEST', request.user, to_user, connection=connection)
     return Response({"message": "Connection request sent."}, status=status.HTTP_201_CREATED)
 
+
 @api_view(['PATCH'])
-@authentication_classes([SessionAuthentication, BasicAuthentication])
-@permission_classes([IsAuthenticated])
 def respond_to_connection_request(request):
     data = request.data
-    connection_id = data.get('connectionId')  # The ID of the connection to respond to
-    action = data.get('action')  # Either 'accept' or 'decline'
-    notification_id = data.get('notificationId')  # Optional: the ID of the original connection request notification
+    connection_id = data.get('connectionId')
+    action = data.get('action')
+    notification_id = data.get('notificationId')
 
     if not connection_id or not action:
         return Response({"error": "connectionId and action are required"}, status=status.HTTP_400_BAD_REQUEST)
 
-    try:
-        connection = Connection.objects.get(id=connection_id)
-    except Connection.DoesNotExist:
+    connection = Connection.objects.filter(id=parse_int(connection_id)).first() if parse_int(connection_id) else None
+    if not connection:
         return Response({"error": "Connection not found"}, status=status.HTTP_404_NOT_FOUND)
-
-    # Ensure that the current user is the intended recipient for the connection request.
-    if connection.to_user != request.user:
-        return Response({"error": "You are not authorized to respond to this connection request."}, 
+    if connection.to_user_id != request.user.pk:
+        return Response({"error": "You are not authorized to respond to this connection request."},
                         status=status.HTTP_403_FORBIDDEN)
+    if connection.status != 'PENDING':
+        return Response({"error": "This request was already answered."}, status=status.HTTP_400_BAD_REQUEST)
+
+    if action not in ('accept', 'decline'):
+        return Response({"error": "Invalid action. Use 'accept' or 'decline'."}, status=status.HTTP_400_BAD_REQUEST)
+
+    Notification.objects.filter(
+        recipient=request.user, notification_type='CONNECTION_REQUEST', connection=connection
+    ).delete()
+    if notification_id:
+        Notification.objects.filter(id=parse_int(notification_id), recipient=request.user).delete()
 
     if action == 'accept':
-        connection.accept()  # Accepts the connection request
-
-        # Remove the original connection request notification if its ID was provided
-        if notification_id:
-            try:
-                original_notification = Notification.objects.get(id=notification_id, recipient=request.user)
-                original_notification.delete()
-            except Notification.DoesNotExist:
-                pass  # If not found, just continue
-
-        # Create notifications for both users about the accepted connection
-        Notification.objects.create_connection_accepted_notification(
-            sender=connection.from_user,
-            recipient=connection.to_user
-        )
-        Notification.objects.create_connection_accepted_notification(
-            sender=connection.to_user,
-            recipient=connection.from_user
-        )
-
+        connection.accept()
+        Notification.objects.create_connection_accepted_notification(sender=connection.from_user, recipient=connection.to_user)
+        Notification.objects.create_connection_accepted_notification(sender=connection.to_user, recipient=connection.from_user)
         return Response({"message": "Connection request accepted and notifications sent."}, status=status.HTTP_200_OK)
-    elif action == 'decline':
-        connection.decline()  # Decline the connection request
-        return Response({"message": "Connection request declined."}, status=status.HTTP_200_OK)
-    else:
-        return Response({"error": "Invalid action. Use 'accept' or 'decline'."}, status=status.HTTP_400_BAD_REQUEST)
-    
-@api_view(['POST'])
-@authentication_classes([SessionAuthentication, BasicAuthentication])
-@permission_classes([IsAuthenticated])
-def cancel_connection_request(request):
-    data = request.data
-    to_user_id = data.get('userId')  # The user ID to whom the connection request was sent
 
+    connection.decline()
+    return Response({"message": "Connection request declined."}, status=status.HTTP_200_OK)
+
+
+@api_view(['POST'])
+def cancel_connection_request(request):
+    to_user_id = request.data.get('userId')
     if not to_user_id:
         return Response({"error": "userId is required"}, status=status.HTTP_400_BAD_REQUEST)
-
     try:
-        to_user = UserProfile.objects.get(id=to_user_id)
-    except UserProfile.DoesNotExist:
-        return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
-
-    # Check if a pending connection request exists
-    existing_connection = Connection.objects.filter(from_user=request.user, to_user=to_user, status='PENDING').first()
-    if not existing_connection:
+        existing = Connection.objects.filter(from_user=request.user, to_user_id=to_user_id, status='PENDING').first()
+    except (ValidationError, ValueError):
+        existing = None
+    if not existing:
         return Response({"error": "No pending connection request found."}, status=status.HTTP_404_NOT_FOUND)
 
-    # Cancel the connection request
-    existing_connection.delete()  # Or you can set the status to 'CANCELLED' if you want to keep a record
-
-    # Delete the associated notification using the connection ID
-    Notification.objects.filter(
-        sender=request.user,
-        recipient=to_user,
-        notification_type='CONNECTION_REQUEST',
-        connection_id=existing_connection.id  # Use the ID instead of the instance
-    ).delete()
-
+    Notification.objects.filter(connection=existing, notification_type='CONNECTION_REQUEST').delete()
+    existing.delete()
     return Response({"message": "Connection request canceled and notification deleted."}, status=status.HTTP_200_OK)
 
-@api_view(['GET', 'POST'])
-@authentication_classes([SessionAuthentication, BasicAuthentication])
-@permission_classes([IsAuthenticated])
-def comments(request):
-    if request.method == 'GET':
-        post_id = request.GET.get('postId')
-        if not post_id:
-            return Response("Post ID is required", status=400)
-        
-        try:
-            post = Post.objects.get(id=post_id)
-            # Only get top-level comments (those without parents)
-            comments = post.comments.filter(parent=None)
-            serialized_comments = []
-            
-            for comment in comments:
-                comment_serialized = CommentSerializer(comment)
-                comment_data = comment_serialized.data
-                serialized_comments.append(comment_data)
-            
-            return Response(serialized_comments, status=200)
-        except Post.DoesNotExist:
-            return Response("Post not found", status=404)
-
-    if request.method == 'POST':
-        try:
-            data = request.data
-            post_id = data.get('postId')
-            message = data.get('message')
-            parent_id = data.get('parentId')  # Get parent comment ID if it exists
-            
-            if not post_id or not message:
-                return Response("Post ID and message are required", status=400)
-            
-            post = Post.objects.get(id=post_id)
-            parent_comment = None
-            if parent_id:
-                try:
-                    parent_comment = Comment.objects.get(id=parent_id)
-                except Comment.DoesNotExist:
-                    return Response("Parent comment not found", status=404)
-            
-            converted_tz = pytz.timezone('US/Eastern')
-            date_posted = datetime.now(converted_tz)
-            
-            comment = Comment.objects.create_comment(
-                message=message,
-                user=request.user,
-                post=post,
-                date_posted=date_posted,
-                parent=parent_comment
-            )
-            
-            # Add a notification for the original poster (if the commenter is not the post owner)
-            # Also notify the parent comment owner if this is a reply
-            if parent_comment and parent_comment.user != request.user:
-                Notification.objects.create(
-                    recipient=parent_comment.user,
-                    sender=request.user,
-                    notification_type="COMMENT",
-                    post_mentioned=post,
-                    comment=comment
-                )
-            elif post.user != request.user:
-                Notification.objects.create(
-                    recipient=post.user,
-                    sender=request.user,
-                    notification_type="COMMENT",
-                    post_mentioned=post,
-                    comment=comment
-                )
-            
-            serializer = CommentSerializer(comment)
-            return Response(serializer.data, status=201)
-            
-        except Post.DoesNotExist:
-            return Response("Post not found", status=404)
-        except Exception as e:
-            return Response(str(e), status=400)
-    
-    return Response('Invalid Method Request', status=403)
 
 @api_view(['DELETE'])
-@authentication_classes([SessionAuthentication, BasicAuthentication])
-@permission_classes([IsAuthenticated])
 def remove_connection(request):
-    data = request.data
-    user_id = data.get('userId')  # The user ID of the connection to remove
-
+    user_id = request.data.get('userId')
     if not user_id:
         return Response({"error": "userId is required"}, status=status.HTTP_400_BAD_REQUEST)
-
     try:
         other_user = UserProfile.objects.get(id=user_id)
-    except UserProfile.DoesNotExist:
+    except (UserProfile.DoesNotExist, ValidationError, ValueError):
         return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
 
-    # Find and delete the connection from either direction
     connection = Connection.objects.filter(
-        (Q(from_user=request.user) & Q(to_user=other_user)) |
-        (Q(from_user=other_user) & Q(to_user=request.user)),
+        Q(from_user=request.user, to_user=other_user) | Q(from_user=other_user, to_user=request.user),
         status='ACCEPTED'
     ).first()
-
     if not connection:
         return Response({"error": "No active connection found."}, status=status.HTTP_404_NOT_FOUND)
 
-    # Delete any connection-related notifications between these users
     Notification.objects.filter(
-        (Q(sender=request.user) & Q(recipient=other_user)) |
-        (Q(sender=other_user) & Q(recipient=request.user)),
+        Q(sender=request.user, recipient=other_user) | Q(sender=other_user, recipient=request.user),
         notification_type__in=['CONNECTION_REQUEST', 'CONNECTION_ACCEPTED']
     ).delete()
-
-    # Delete the connection
     connection.delete()
-
     return Response({"message": "Connection removed successfully."}, status=status.HTTP_200_OK)
 
-@api_view(['GET'])
-@authentication_classes([SessionAuthentication, BasicAuthentication])
-@permission_classes([IsAuthenticated])
-def categories(request):
-    if request.method == 'GET':
-        categories = Category.objects.all()
-        return Response([{'id': cat.id, 'name': cat.name, 'description': cat.description} for cat in categories], status=200)
 
-@api_view(['POST'])
-@authentication_classes([SessionAuthentication, BasicAuthentication])
-@permission_classes([IsAuthenticated])
-def create_category(request):
-    if request.method == 'POST':
-        name = request.data.get('name')
-        description = request.data.get('description', '')
-        
-        if not name:
-            return Response({'error': 'Category name is required'}, status=400)
-            
-        if Category.objects.filter(name=name).exists():
-            return Response({'error': 'Category already exists'}, status=400)
-            
-        category = Category.objects.create(name=name, description=description)
-        return Response({'id': category.id, 'name': category.name, 'description': category.description}, status=201)
+############################################################
+# Comments
+############################################################
+
+@api_view(['GET', 'POST', 'DELETE'])
+def comments(request):
+    if request.method == 'GET':
+        post_id = parse_int(request.GET.get('postId'))
+        if not post_id:
+            return Response("Post ID is required", status=400)
+        found = Post.objects.visible_to(request.user).filter(id=post_id).first()
+        if not found:
+            return Response("Post not found", status=404)
+        top_level = (
+            found.comments.filter(parent=None)
+            .select_related('user')
+            .prefetch_related('replies__user', 'replies__parent__user')
+        )
+        return Response(CommentSerializer(top_level, many=True).data, status=200)
+
+    if request.method == 'DELETE':
+        comment_id = parse_int(request.GET.get('commentId') or request.data.get('commentId'))
+        found = Comment.objects.filter(id=comment_id, post__family__members=request.user).select_related('post').first() \
+            if comment_id else None
+        if not found:
+            return Response("Comment not found", status=404)
+        if found.user_id != request.user.pk and found.post.user_id != request.user.pk:
+            return Response("You can't delete this comment.", status=403)
+        found.delete()
+        return Response("Comment deleted.", status=200)
+
+    # POST
+    data = request.data
+    message = (data.get('message') or '').strip()
+    post_id = parse_int(data.get('postId'))
+    if not post_id or not message:
+        return Response("Post ID and message are required", status=400)
+    if len(message) > 5000:
+        return Response("Comments can be up to 5000 characters.", status=400)
+
+    found = Post.objects.visible_to(request.user).filter(id=post_id).select_related('user').first()
+    if not found:
+        return Response("Post not found", status=404)
+
+    parent_comment = None
+    parent_id = data.get('parentId')
+    if parent_id:
+        parent_comment = Comment.objects.filter(id=parse_int(parent_id), post=found).select_related('user').first()
+        if not parent_comment:
+            return Response("Parent comment not found", status=404)
+
+    comment = Comment.objects.create_comment(message=message, user=request.user, post=found, parent=parent_comment)
+
+    # Notify the person being replied to, and the relic's author, once each (never yourself).
+    recipients = []
+    if parent_comment:
+        recipients.append(parent_comment.user)
+    recipients.append(found.user)
+    notified = set()
+    for recipient in recipients:
+        if recipient.pk != request.user.pk and recipient.pk not in notified:
+            notified.add(recipient.pk)
+            Notification.objects.create_notif('COMMENT', request.user, recipient, post_mentioned=found, comment=comment)
+
+    return Response(CommentSerializer(comment).data, status=201)
