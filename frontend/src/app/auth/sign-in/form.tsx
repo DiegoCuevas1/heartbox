@@ -1,4 +1,6 @@
 "use client";
+import { API_BASE, apiFetch } from "@/utils/api";
+import Link from "next/link";
 import { FormEvent, useState } from "react";
 import toast from "react-hot-toast";
 import { sanitize_res_msg } from "@/utils/utilFunctions";
@@ -12,7 +14,7 @@ function FormComponent() {
   const [showLoadingOverlay, setShowLoadingOverlay] = useState(false);
 
   const handleSocialLogin = (provider: string) => {
-    window.location.href = `http://localhost:8000/accounts/${provider}/login/`;
+    window.location.href = `${API_BASE}/accounts/${provider}/login/`;
   };
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
@@ -26,13 +28,12 @@ function FormComponent() {
     };
 
     try {
-      const res = await fetch("http://localhost:8000/api/user/sign-in", {
+      const res = await apiFetch("/api/user/sign-in", {
         headers: {
           "Content-Type": "application/json",
         },
         method: "POST",
         body: JSON.stringify(data),
-        credentials: "include",
       });
       const res_msg = await res.text();
       if (res.ok) {
@@ -140,9 +141,12 @@ function FormComponent() {
                 Remember Me
               </label>
             </div>
-            <button className="py-1 px-2 italic font-loves font-bold rounded-xl text-sm bg-[#d31c60] text-white ">
+            <Link
+              href="/auth/forgot-password"
+              className="py-1 px-2 italic font-loves font-bold rounded-xl text-sm bg-[#d31c60] text-white "
+            >
               Forgot Password?
-            </button>
+            </Link>
           </div>
           <button
             type="submit"

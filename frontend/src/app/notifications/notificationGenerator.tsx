@@ -1,4 +1,5 @@
 "use client";
+import { apiFetch } from "@/utils/api";
 import { useState, useEffect } from "react";
 import { NotificationType } from "../types/notification";
 import Notification from "./notification";
@@ -6,13 +7,9 @@ import { motion } from "framer-motion";
 
 async function getData() {
   try {
-    const res = await fetch(
-      `http://localhost:8000/api/user/notifications?unread_only=false`,
-      {
-        method: "GET",
-        credentials: "include",
-      }
-    );
+    const res = await apiFetch(`/api/user/notifications?unread_only=false`, {
+      method: "GET",
+    });
 
     if (!res.ok) {
       throw Error("Failed to fetch notifications");
@@ -46,7 +43,7 @@ export default function NotificationGenerator() {
       opacity: 1,
       x: 0,
       transition: {
-        type: "spring",
+        type: "spring" as const,
         duration: 0.8,
         bounce: 0.2,
       },

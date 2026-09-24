@@ -2,8 +2,10 @@
 
 import { useState } from "react";
 import { BiSearch } from "react-icons/bi";
+import { useRouter } from "next/navigation";
 
 const SearchBar = () => {
+  const router = useRouter();
   const [searchTerm, setSearchTerm] = useState("");
   const [placeholder, setPlaceholder] = useState("Search...");
   const [isFocused, setIsFocused] = useState(false);
@@ -20,7 +22,9 @@ const SearchBar = () => {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Searching for:", searchTerm);
+    const q = searchTerm.trim();
+    if (q.length < 2) return;
+    router.push(`/search?q=${encodeURIComponent(q)}`);
   };
 
   return (
@@ -43,7 +47,6 @@ const SearchBar = () => {
       <button
         type="submit"
         className={`flex items-center justify-center p-2 border-gray-300 active:border-black border rounded-r-md transition-transform duration-150 active:scale-90`} // Scale effect
-        onSubmit={handleSearch}
       >
         <BiSearch className="text-gray-900 text-3xl" />
       </button>

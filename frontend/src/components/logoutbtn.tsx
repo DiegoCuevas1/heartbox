@@ -1,6 +1,6 @@
 "use client";
+import { apiFetch } from "@/utils/api";
 import toast from "react-hot-toast";
-import getCSRF from "@/utils/cookie";
 import { sanitize_res_msg } from "@/utils/utilFunctions";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -11,24 +11,20 @@ const LogoutButton = () => {
   const [showLoadingOverlay, setShowLoadingOverlay] = useState(false);
 
   const handleLogout = async () => {
-    const csrfValue = getCSRF() ?? "";
     try {
       setShowLoadingOverlay(true);
-      
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
-      const res = await fetch("http://localhost:8000/api/user/logout", {
-        headers: {
-          "X-CSRFToken": csrfValue,
-        },
+
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      const res = await apiFetch("/api/user/logout", {
         method: "DELETE",
-        credentials: "include",
       });
 
       const res_mesg = await res.text();
 
       if (res.ok) {
         toast.success(sanitize_res_msg(res_mesg));
+        localStorage.removeItem("user");
         window.location.href = "/home";
       } else {
         setShowLoadingOverlay(false);

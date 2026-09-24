@@ -1,4 +1,6 @@
 "use client";
+import { cldImage, cldVideo } from "@/utils/media";
+import { apiFetch } from "@/utils/api";
 import { Post } from "@/app/types/post";
 import Image from "next/image";
 import Link from "next/link";
@@ -20,13 +22,9 @@ export default function TimelinePostCard({ post }: { post: Post }) {
 
   const handleLike = async () => {
     try {
-      const response = await fetch(
-        `http://localhost:8000/api/user/posts/${post.id}/like`,
-        {
-          method: isLiked ? "DELETE" : "POST",
-          credentials: "include",
-        }
-      );
+      const response = await apiFetch(`/api/user/posts/${post.id}/like`, {
+        method: isLiked ? "DELETE" : "POST",
+      });
 
       if (!response.ok) {
         throw new Error("Failed to update like status");
@@ -51,7 +49,8 @@ export default function TimelinePostCard({ post }: { post: Post }) {
       <div className="flex items-start">
         <Link href={`/profile/${post.user_details.id}`}>
           <Image
-            src={`https://res.cloudinary.com/dcyk5quni/${post.user_details.profile_picture}`}
+            unoptimized
+            src={cldImage(post.user_details.profile_picture, 100)}
             alt={`${post.user_details.first_name}'s profile picture`}
             width={50}
             height={50}
@@ -90,7 +89,8 @@ export default function TimelinePostCard({ post }: { post: Post }) {
               <div className="my-2">
                 {post.media_type === "IMAGE" ? (
                   <Image
-                    src={`https://res.cloudinary.com/dcyk5quni/${post.media_url}`}
+                    unoptimized
+                    src={cldImage(post.media_url, 800)}
                     alt="Post image"
                     width={400}
                     height={400}
@@ -99,7 +99,7 @@ export default function TimelinePostCard({ post }: { post: Post }) {
                 ) : (
                   post.media_type === "VIDEO" && (
                     <video
-                      src={`https://res.cloudinary.com/dcyk5quni/video/upload/${post.media_url}`}
+                      src={cldVideo(post.media_url)}
                       controls
                       className="rounded-lg max-h-[300px] w-auto"
                     />

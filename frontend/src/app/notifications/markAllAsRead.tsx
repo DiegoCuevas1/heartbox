@@ -1,4 +1,5 @@
 "use client";
+import { apiFetch } from "@/utils/api";
 
 import { useEffect, useState } from "react";
 import { toast } from "react-hot-toast";
@@ -14,12 +15,11 @@ export default function MarkAllAsRead() {
 
       try {
         setHasMarkedAsRead(true);
-        const response = await fetch(
-          "http://localhost:8000/api/user/notification/mark-all-read",
+        const response = await apiFetch(
+          "/api/user/notification/mark-all-read",
           {
             method: "POST",
-            credentials: "include",
-          }
+          },
         );
         if (!response.ok) {
           console.error("Failed to mark notifications as read");

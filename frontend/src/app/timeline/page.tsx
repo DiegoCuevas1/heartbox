@@ -1,54 +1,19 @@
 "use client";
 import { useUserContext } from "@/context/AuthContext";
-import { useEffect, useState } from "react";
-import { Post } from "../types/post";
+import { usePostFeed } from "@/hooks/usePostFeed";
+import LoadMore from "@/components/LoadMore";
 import TimelinePostCard from "./timelineCard";
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { redirect } from "next/navigation";
-async function getData() {
-  try {
-    const res = await fetch(`http://localhost:8000/api/user/posts`, {
-      method: "GET",
-      credentials: "include",
-    });
-
-    if (!res.ok) {
-      // Handle error cases
-      console.log("Failed Fetch");
-      return Error();
-    }
-
-    const data = await res.json();
-    // Process the data as needed
-    return data; // Add this line to return the data from the function
-  } catch (error: any) {
-    console.error("Error:", error.message);
-    throw error; // Rethrow the error to be caught by the calling code
-  }
-}
-
 export default function Timeline() {
-  const [posts, setPosts] = useState<Post[] | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const { isAuthenticated } = useUserContext();
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        setIsLoading(true);
-        const fetchedData = await getData();
-        setPosts(fetchedData);
-      } catch (error: any) {
-        console.error("Error in fetchData:", error.message);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-    fetchData();
-  }, []);
+  // Every relic from every HeartBox the user belongs to, newest first.
+  const { posts, isLoading, isLoadingMore, hasMore, loadMore } =
+    usePostFeed("/api/user/posts");
+  const { isAuthenticated, isLoading: authLoading } = useUserContext();
 
-  if (!isAuthenticated) {
+  if (!authLoading && !isAuthenticated) {
     redirect("/home");
   }
   if (isLoading) {
@@ -86,7 +51,7 @@ export default function Timeline() {
     );
   }
 
-  if (!posts || posts.length === 0) {
+  if (posts.length === 0) {
     return (
       <motion.div
         className="flex-col flex items-center justify-center"
@@ -94,12 +59,7 @@ export default function Timeline() {
         animate={{ opacity: 1 }}
         transition={{ duration: 0.8 }}
       >
-        <Image
-          src={"/images/family_heartbox.png"}
-          alt={""}
-          width={150}
-          height={100}
-        />
+        <Image src={"/images/families.png"} alt={""} width={150} height={100} />
         <p className="text-3xl font-loves font-bold border-b-2 mt-4 border-border">
           Nothing to see here yet...
         </p>
@@ -108,7 +68,7 @@ export default function Timeline() {
             className="text-links hover:underline"
             href={"/families/add-family"}
           >
-            Join a Family
+            Join or create a HeartBox
           </Link>{" "}
           to fill up your timeline!
         </p>
@@ -131,10 +91,10 @@ export default function Timeline() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
           >
-            <p>Be the first to post in this family!</p>
+            <p>Be the first to add a relic!</p>
             <Link href="/create-post">
               <button className="p-2 bg-[#4D94D0] w-36 text-xl font-loves font-bold text-white mt-3 rounded-lg shadow-[0_20px_10px_-15px_rgba(0,0,0,.3)] mx-auto hover:scale-125 active:scale-90 transition-all">
-                Create Post
+                Add a Relic
               </button>
             </Link>
           </motion.div>
@@ -142,18 +102,23 @@ export default function Timeline() {
           <>
             {posts.map((post, index) => (
               <motion.div
-                key={index}
+                key={post.id}
                 className="flex-col justify-center mt-2"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{
                   duration: 0.8,
-                  delay: index * 0.15,
+                  delay: Math.min(index % 20, 5) * 0.15,
                 }}
               >
                 <TimelinePostCard post={post} />
               </motion.div>
             ))}
+            <LoadMore
+              hasMore={hasMore}
+              isLoading={isLoadingMore}
+              onLoadMore={loadMore}
+            />
           </>
         )}
       </div>

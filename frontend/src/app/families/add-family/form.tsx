@@ -1,4 +1,5 @@
 "use client";
+import { apiFetch } from "@/utils/api";
 import { sanitize_res_msg } from "@/utils/utilFunctions";
 import classNames from "classnames";
 import { useRouter } from "next/navigation";
@@ -17,7 +18,7 @@ export default function FormComponent() {
             "py-2 px-[51px] font-loves font-bold flex  text-xl hover:bg-[#D31c60] hover:text-white transition-all",
             {
               "bg-[#D31c60] text-white": formTypeIsJoin === false, // Highlight "Create" when formType is false
-            }
+            },
           )}
           onClick={() => setFormTypeIsJoin(false)}
         >
@@ -28,7 +29,7 @@ export default function FormComponent() {
             "py-2 font-loves font-bold  flex px-[51px] text-xl hover:bg-[#D31c60] hover:text-white transition-all ",
             {
               "bg-[#D31c60] text-white": formTypeIsJoin === true, // Highlight "Join" when formType is true
-            }
+            },
           )}
           onClick={() => setFormTypeIsJoin(true)}
         >
@@ -50,7 +51,7 @@ function CreateForm() {
   const handleInputChange = (e: any) => {
     const { name, value } = e.target;
 
-    let newValue = value;
+    const newValue = value;
 
     setFormData({ ...formData, [name]: newValue });
   };
@@ -72,10 +73,9 @@ function CreateForm() {
     }
 
     try {
-      const res = await fetch("http://localhost:8000/api/user/families", {
+      const res = await apiFetch("/api/user/families", {
         method: "POST",
         body: data,
-        credentials: "include",
         // Set content type to multipart/form-data
         headers: {
           Accept: "application/json",
@@ -147,17 +147,13 @@ function JoinForm() {
       inviteCode: formData.get("inviteCode"),
     };
     try {
-      const res = await fetch(
-        "http://localhost:8000/api/user/families/join-family",
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-          method: "POST",
-          body: JSON.stringify(data),
-          credentials: "include",
-        }
-      );
+      const res = await apiFetch("/api/user/families/join-family", {
+        headers: {
+          "Content-Type": "application/json",
+        },
+        method: "POST",
+        body: JSON.stringify(data),
+      });
       const res_msg = await res.text();
       if (res.ok) {
         toast.success(res_msg);

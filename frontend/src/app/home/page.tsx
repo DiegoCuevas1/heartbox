@@ -1,4 +1,5 @@
 "use client";
+import { apiFetch } from "@/utils/api";
 
 import Image from "next/image";
 import Link from "next/link";
@@ -20,16 +21,13 @@ export default function HomePage() {
       const formData = new FormData(e.currentTarget as HTMLFormElement);
       const email = formData.get("email");
       try {
-        const res = await fetch(
-          "http://localhost:8000/api/user/forgot-password",
-          {
-            headers: {
-              "Content-Type": "application/json",
-            },
-            method: "POST",
-            body: JSON.stringify({ email }),
-          }
-        );
+        const res = await apiFetch("/api/user/forgot-password", {
+          headers: {
+            "Content-Type": "application/json",
+          },
+          method: "POST",
+          body: JSON.stringify({ email }),
+        });
         const res_msg = await res.text();
         if (res.ok) {
           toast.success("Password reset link sent to your email.");
@@ -47,13 +45,12 @@ export default function HomePage() {
         password: formData.get("password"),
       };
       try {
-        const res = await fetch("http://localhost:8000/api/user/sign-in", {
+        const res = await apiFetch("/api/user/sign-in", {
           headers: {
             "Content-Type": "application/json",
           },
           method: "POST",
           body: JSON.stringify(data),
-          credentials: "include",
         });
         const res_msg = await res.text();
         if (res.ok) {

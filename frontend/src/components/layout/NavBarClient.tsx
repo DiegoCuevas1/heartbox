@@ -1,4 +1,6 @@
 "use client";
+import { cldImage } from "@/utils/media";
+import { apiFetch } from "@/utils/api";
 
 import Link from "next/link";
 import { FaBell, FaSearch, FaBars } from "react-icons/fa";
@@ -45,19 +47,10 @@ const NavBarClient = () => {
     };
   }, []);
 
-  useEffect(() => {
-    if (isAuthenticated && showNotifications) {
-      fetchNotifications();
-    }
-  }, [isAuthenticated, showNotifications]);
-
   const fetchNotifications = async () => {
     try {
-      const response = await fetch(
-        "http://localhost:8000/api/user/notifications?unread_only=true",
-        {
-          credentials: "include",
-        }
+      const response = await apiFetch(
+        "/api/user/notifications?unread_only=true",
       );
       if (response.ok) {
         const data = await response.json();
@@ -67,6 +60,12 @@ const NavBarClient = () => {
       console.error("Error fetching notifications:", error);
     }
   };
+
+  useEffect(() => {
+    if (isAuthenticated && showNotifications) {
+      fetchNotifications();
+    }
+  }, [isAuthenticated, showNotifications]);
 
   const getNotificationMessage = (notification: NotificationType) => {
     switch (notification.notification_type) {
@@ -87,19 +86,18 @@ const NavBarClient = () => {
 
   const markNotificationAsRead = async (notificationId: number) => {
     try {
-      const response = await fetch(
-        `http://localhost:8000/api/user/notification/${notificationId}/read`,
+      const response = await apiFetch(
+        `/api/user/notification/${notificationId}/read`,
         {
           method: "POST",
-          credentials: "include",
-        }
+        },
       );
       if (response.ok) {
         decrementUnreadCount();
         setNotifications(
           notifications.map((notif) =>
-            notif.id === notificationId ? { ...notif, read: true } : notif
-          )
+            notif.id === notificationId ? { ...notif, read: true } : notif,
+          ),
         );
       }
     } catch (error) {
@@ -270,7 +268,11 @@ const NavBarClient = () => {
                             className="flex items-start space-x-3"
                           >
                             <Image
-                              src={`https://res.cloudinary.com/dcyk5quni/${notification.sender_details.profile_picture}`}
+                              unoptimized
+                              src={cldImage(
+                                notification.sender_details.profile_picture,
+                                80,
+                              )}
                               alt="Profile"
                               width={40}
                               height={40}
@@ -282,7 +284,7 @@ const NavBarClient = () => {
                               </p>
                               <p className="text-xs text-gray-500 mt-1">
                                 {new Date(
-                                  notification.timestamp
+                                  notification.timestamp,
                                 ).toLocaleDateString()}
                               </p>
                             </div>

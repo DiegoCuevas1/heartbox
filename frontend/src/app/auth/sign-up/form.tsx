@@ -1,4 +1,5 @@
 "use client";
+import { API_BASE, apiFetch } from "@/utils/api";
 import { FormEvent, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
@@ -83,7 +84,7 @@ function FormComponent() {
     formData.delete("confirm_password");
 
     try {
-      const res = await fetch("http://127.0.0.1:8000/api/user/sign-up", {
+      const res = await apiFetch("/api/user/sign-up", {
         method: "POST",
         body: formData,
       });
@@ -107,7 +108,7 @@ function FormComponent() {
   };
 
   const handleSocialLogin = (provider: string) => {
-    window.location.href = `http://localhost:8000/accounts/${provider}/login/`;
+    window.location.href = `${API_BASE}/accounts/${provider}/login/`;
   };
 
   return (

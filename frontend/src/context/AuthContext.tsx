@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { setSignIn, setSignOut } from "@/utils/NavAuthToggle";
 import toast from "react-hot-toast";
+import { apiFetch } from "@/utils/api";
 import { User } from "@/app/types/user";
 
 interface AuthContextType {
@@ -41,19 +42,15 @@ export const UserContextProvider = ({
   };
 
   useEffect(() => {
-    const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-
     const checkLogin = async () => {
       try {
         setIsLoading(true);
-        const res = await fetch(`${API_URL}/api/user/check-login`, {
-          credentials: "include",
-          next: { revalidate: 0 },
+        const res = await apiFetch("/api/user/check-login", {
+          cache: "no-store",
         });
 
-        const data = await res.json();
-
-        if (res.ok && res.status === 202) {
+        if (res.status === 202) {
+          const data = await res.json();
           const userData = JSON.parse(data.data);
           const user: User = {
             id: userData.id,

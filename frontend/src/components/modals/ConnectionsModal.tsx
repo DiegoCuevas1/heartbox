@@ -1,4 +1,6 @@
 "use client";
+import { cldImage } from "@/utils/media";
+import { apiFetch } from "@/utils/api";
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { User } from "@/app/types";
@@ -30,12 +32,7 @@ export default function ConnectionsModal({
     if (isOpen) {
       async function fetchConnections() {
         try {
-          const response = await fetch(
-            `http://localhost:8000/api/user/connections`,
-            {
-              credentials: "include",
-            }
-          );
+          const response = await apiFetch(`/api/user/connections`);
           if (!response.ok) throw new Error("Failed to fetch connections");
           const data = await response.json();
           setConnections(data);
@@ -107,7 +104,8 @@ export default function ConnectionsModal({
                 >
                   <div className="flex items-center space-x-4 p-2 hover:bg-gray-50 rounded-lg cursor-pointer">
                     <Image
-                      src={`https://res.cloudinary.com/dcyk5quni/${connection.profile_picture}`}
+                      unoptimized
+                      src={cldImage(connection.profile_picture, 96)}
                       alt={`${connection.first_name} ${connection.last_name}'s profile picture`}
                       width={48}
                       height={48}

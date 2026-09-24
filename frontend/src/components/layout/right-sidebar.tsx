@@ -1,4 +1,6 @@
 "use client";
+import { cldImage } from "@/utils/media";
+import { apiFetch } from "@/utils/api";
 import { Family } from "@/app/types";
 import { useUserContext } from "@/context/AuthContext";
 import Image from "next/image";
@@ -15,13 +17,9 @@ const Sidebar = () => {
     if (isAuthenticated) {
       const fetchFamilies = async () => {
         try {
-          const response = await fetch(
-            "http://localhost:8000/api/user/families",
-            {
-              method: "GET",
-              credentials: "include",
-            }
-          );
+          const response = await apiFetch("/api/user/families", {
+            method: "GET",
+          });
 
           if (response.ok) {
             const data = await response.json();
@@ -81,7 +79,8 @@ const Sidebar = () => {
                       className="flex items-center space-x-4 p-2 rounded-md hover:bg-gray-200"
                     >
                       <Image
-                        src={`https://res.cloudinary.com/dcyk5quni/${family.family_picture}`}
+                        unoptimized
+                        src={cldImage(family.family_picture, 150)}
                         alt={`${family.family_name}'s profile picture`}
                         width={75}
                         height={75}

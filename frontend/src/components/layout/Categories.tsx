@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { RELIC_CATEGORIES, categoryHref } from "@/utils/categories";
 
 interface CategoriesProps {
   onLinkClick?: (href: string) => void;
@@ -11,44 +12,18 @@ export default function Categories({ onLinkClick }: CategoriesProps) {
       onLinkClick(href);
     }
   };
-  // Define the categories
-  const categories = [
-    { id: 1, name: "Wedding Relics", image: "/images/wedding-relics.png" },
-    { id: 2, name: "Christmas Relics", image: "/images/christmas-relics.png" },
-    { id: 3, name: "Birthday Relics", image: "/images/birthday-relics.png" },
-    {
-      id: 4,
-      name: "Anniversary Relics",
-      image: "/images/anniversary-relics.png",
-    },
-    {
-      id: 5,
-      name: "Graduation Relics",
-      image: "/images/graduation-relics.png",
-    },
-    { id: 6, name: "New Year Relics", image: "/images/new-year-relics.png" },
-    { id: 7, name: "Halloween Relics", image: "/images/halloween-relics.png" },
-    {
-      id: 8,
-      name: "Valentine's Relics",
-      image: "/images/valentines-relics.png",
-    },
-  ];
+  const categories = RELIC_CATEGORIES.map((name) => ({
+    name: `${name} Relics`,
+    href: categoryHref(name),
+  }));
 
   return (
     <div className="categories w-full">
       <ul className="max-h-72 overflow-y-auto space-y-3">
         {categories.map((category) => (
-          <li
-            key={category.id}
-            onClick={() =>
-              handleClick(
-                `/categories/${category.name.toLowerCase().replace(" ", "-")}`
-              )
-            }
-          >
+          <li key={category.href} onClick={() => handleClick(category.href)}>
             <Link
-              href={`/categories/${category.name.toLowerCase().replace(" ", "-")}`}
+              href={category.href}
               className="flex items-center group w-full hover:bg-gray-50 p-2 rounded-lg transition-colors"
             >
               <Image
