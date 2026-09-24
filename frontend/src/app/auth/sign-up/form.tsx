@@ -1,4 +1,5 @@
 "use client";
+import { compressImage } from "@/utils/compressImage";
 import { API_BASE, apiFetch } from "@/utils/api";
 import { FormEvent, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -20,7 +21,7 @@ function FormComponent() {
     confirmPassword: "",
     pin: "",
     birthDate: new Date(),
-    profilePic: null,
+    profilePic: null as File | null,
   });
 
   const handleInputChange = (e: any) => {
@@ -42,8 +43,26 @@ function FormComponent() {
 
   const router = useRouter();
   const [step, setStep] = useState(1);
+  const validateStepOne = () => {
+    if (!validateEmail(formData.email)) {
+      toast.error("Invalid email format. Please try again.");
+      setStep(1);
+      return false;
+    }
+    if (formData.password.length < 8) {
+      toast.error("Passwords must be at least 8 characters.");
+      setStep(1);
+      return false;
+    }
+    if (formData.password !== formData.confirmPassword) {
+      toast.error("Passwords do not match. Please try again.");
+      setStep(1);
+      return false;
+    }
+    return true;
+  };
   const handleNextStep = () => {
-    setStep(step + 1);
+    if (validateStepOne()) setStep(step + 1);
   };
   const handleFileChange = (e: any) => {
     const file = e.target.files[0];
@@ -58,35 +77,29 @@ function FormComponent() {
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    // The form has two steps and step 1's inputs are unmounted by now, so
+    // build the request from component state rather than the DOM.
+    if (step !== 2 || !validateStepOne()) return;
     setIsLoading(true);
 
-    const formData = new FormData(e.currentTarget);
-
-    // Validate email
-    if (!validateEmail(formData.get("email") as string)) {
-      setIsLoading(false);
-      toast.error("Invalid email format. Please try again.");
-      return;
+    const body = new FormData();
+    body.set("email", formData.email.trim());
+    body.set("password", formData.password);
+    body.set("firstName", formData.firstName.trim());
+    body.set("lastName", formData.lastName.trim());
+    if (formData.pin) body.set("pin", formData.pin);
+    const birthDate = formData.birthDate;
+    if (birthDate instanceof Date && !isNaN(birthDate.getTime())) {
+      body.set("birthDate", birthDate.toISOString().slice(0, 10));
     }
-
-    // Validate passwords match
-    if (formData.get("password") !== formData.get("confirm_password")) {
-      setIsLoading(false);
-      toast.error("Passwords do not match. Please try again.");
-      return;
+    if (formData.profilePic) {
+      body.set("profilePic", await compressImage(formData.profilePic));
     }
-
-    // Format birth date
-    const birthDate = new Date(formData.get("birthDate") as string);
-    formData.set("birthDate", birthDate.toISOString().slice(0, -14));
-
-    // Remove confirm password as it's not needed in the API
-    formData.delete("confirm_password");
 
     try {
       const res = await apiFetch("/api/user/sign-up", {
         method: "POST",
-        body: formData,
+        body,
       });
 
       const resMsg = await res.text();
@@ -218,6 +231,7 @@ function FormComponent() {
                 />
               </div>
               <button
+                type="button"
                 onClick={handleNextStep}
                 className="w-36 h-12 rounded-xl text-white drop-shadow-xl bg-[#d31c60] font-loves font-bold text-3xl hover:cursor-pointer hover:scale-125 active:scale-95 transition-all"
               >
@@ -314,14 +328,18 @@ function FormComponent() {
                   name="pin"
                   className="border-2 p-1 border-gray-400 rounded-md"
                   required
-                  maxLength={50}
-                  placeholder="PIN"
+                  inputMode="numeric"
+                  pattern="\d{4,8}"
+                  title="4 to 8 digits"
+                  maxLength={8}
+                  placeholder="4-8 digit PIN"
                   onChange={handleInputChange}
                   value={formData.pin}
                 />
               </div>
               <div className="flex space-x-2">
                 <button
+                  type="button"
                   className="mx-auto w-36 h-12 font-loves font-bold hover:scale-125 transition-all text-2xl active:scale-95 text-white rounded-xl bg-[#d31c60]"
                   onClick={handlePrevStep}
                 >
