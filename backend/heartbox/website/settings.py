@@ -183,6 +183,9 @@ REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": [
         "rest_framework.permissions.IsAuthenticated",
     ],
+    # Number of trusted reverse proxies in front of Django, so throttling uses
+    # the real client IP from X-Forwarded-For (1 behind Caddy).
+    "NUM_PROXIES": int(os.environ["NUM_PROXIES"]) if os.getenv("NUM_PROXIES") else None,
     "DEFAULT_THROTTLE_RATES": {
         "auth": os.getenv("THROTTLE_AUTH", "10/min"),
         "invite": os.getenv("THROTTLE_INVITE", "10/min"),
